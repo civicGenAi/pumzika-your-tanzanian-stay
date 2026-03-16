@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface DestinationCardProps {
@@ -29,8 +28,7 @@ export const DestinationCard = ({ name, count, gradient, slug, index = 0 }: Dest
         className="absolute bottom-0 left-0 right-0 p-4 md:p-5"
       >
         <h3 className="font-display text-xl font-semibold text-card md:text-2xl">{name}</h3>
-        <p className="flex items-center gap-1 text-sm text-card/80">
-          <MapPin size={12} strokeWidth={1.5} />
+        <p className="text-sm text-card/80">
           {count} properties
         </p>
       </motion.div>

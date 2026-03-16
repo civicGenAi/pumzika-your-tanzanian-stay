@@ -12,9 +12,11 @@ export interface ListingData {
   rating: number;
   reviews: number;
   image: string;
+  images?: string[];
   badges: string[];
   isSuperhost?: boolean;
   instantBook?: boolean;
+  description?: string;
 }
 
 interface ListingCardProps {
@@ -40,7 +42,7 @@ export const ListingCard = ({ listing, index = 0 }: ListingCardProps) => {
           className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
           style={{ backgroundImage: `url(${listing.image})` }}
         />
-        
+
         {/* Save button */}
         <button
           onClick={(e) => { e.stopPropagation(); setSaved(!saved); }}

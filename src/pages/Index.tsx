@@ -23,14 +23,24 @@ const fadeUp = {
 const Index = () => {
   const [activeFilter, setActiveFilter] = useState('All');
   const [showAll, setShowAll] = useState(false);
+  const [where, setWhere] = useState('');
+  const [when, setWhen] = useState('');
+  const [who, setWho] = useState('');
 
-  const filtered = activeFilter === 'All'
-    ? sampleListings
-    : sampleListings.filter(
-        (l) =>
-          l.city.toLowerCase() === activeFilter.toLowerCase() ||
-          l.badges.some((b) => b.toLowerCase() === activeFilter.toLowerCase())
-      );
+  const filtered = sampleListings.filter((listing) => {
+    // Category/Badge filter
+    const matchesFilter = activeFilter === 'All' ||
+      listing.city.toLowerCase() === activeFilter.toLowerCase() ||
+      listing.badges.some((b) => b.toLowerCase() === activeFilter.toLowerCase());
+
+    // Search filter (Where)
+    const matchesWhere = !where ||
+      listing.city.toLowerCase().includes(where.toLowerCase()) ||
+      listing.location.toLowerCase().includes(where.toLowerCase()) ||
+      listing.title.toLowerCase().includes(where.toLowerCase());
+
+    return matchesFilter && matchesWhere;
+  });
 
   const displayed = showAll ? filtered : filtered.slice(0, 8);
 
@@ -68,7 +78,15 @@ const Index = () => {
               From Zanzibar's shores to Kilimanjaro's foothills
             </motion.p>
             <motion.div variants={fadeUp} className="mx-auto mt-8 flex justify-center">
-              <SearchPill variant="hero" />
+              <SearchPill
+                variant="hero"
+                where={where}
+                setWhere={setWhere}
+                when={when}
+                setWhen={setWhen}
+                who={who}
+                setWho={setWho}
+              />
             </motion.div>
           </motion.div>
         </div>
@@ -81,11 +99,10 @@ const Index = () => {
             <button
               key={chip.label}
               onClick={() => setActiveFilter(chip.label)}
-              className={`shrink-0 rounded-pill px-4 py-2 text-sm font-medium transition-all ${
-                activeFilter === chip.label
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'border border-border bg-card text-foreground hover:bg-secondary'
-              }`}
+              className={`shrink-0 rounded-pill px-4 py-2 text-sm font-medium transition-all ${activeFilter === chip.label
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'border border-border bg-card text-foreground hover:bg-secondary'
+                }`}
             >
               {chip.emoji && <span className="mr-1.5">{chip.emoji}</span>}
               {chip.label}
