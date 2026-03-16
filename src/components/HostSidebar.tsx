@@ -17,8 +17,6 @@ import {
 import { BaobabLogo } from '@/components/BaobabLogo';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 const navLinks = [
@@ -44,24 +42,6 @@ export const HostSidebar = () => {
                     <BaobabLogo className="h-8 w-8 fill-white" />
                     <span className="font-display text-xl font-bold tracking-tight">pumzika</span>
                 </Link>
-            </div>
-
-            <Separator className="bg-white/10" />
-
-            {/* Profile Section */}
-            <div className="flex items-center gap-3 p-6">
-                <Avatar className="h-12 w-12 border-2 border-white/20">
-                    <AvatarImage src="" />
-                    <AvatarFallback className="bg-white/10 text-white">
-                        <User size={24} />
-                    </AvatarFallback>
-                </Avatar>
-                <div className="overflow-hidden">
-                    <p className="truncate font-semibold">Tanzania Host</p>
-                    <Badge variant="secondary" className="mt-1 bg-[#E8A838] text-[#1A6B4A] hover:bg-[#E8A838]/90">
-                        Superhost
-                    </Badge>
-                </div>
             </div>
 
             <Separator className="bg-white/10" />

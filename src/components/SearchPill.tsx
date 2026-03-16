@@ -1,4 +1,6 @@
 import { Search } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface SearchPillProps {
   variant?: 'hero' | 'navbar';
@@ -12,13 +14,34 @@ interface SearchPillProps {
 
 export const SearchPill = ({
   variant = 'navbar',
-  where,
-  setWhere,
-  when,
-  setWhen,
-  who,
-  setWho
+  where: propsWhere,
+  setWhere: propsSetWhere,
+  when: propsWhen,
+  setWhen: propsSetWhen,
+  who: propsWho,
+  setWho: propsSetWho
 }: SearchPillProps) => {
+  const navigate = useNavigate();
+  const [internalWhere, setInternalWhere] = useState('');
+  const [internalWhen, setInternalWhen] = useState('');
+  const [internalWho, setInternalWho] = useState('');
+
+  const where = propsWhere !== undefined ? propsWhere : internalWhere;
+  const setWhere = propsSetWhere || setInternalWhere;
+  const when = propsWhen !== undefined ? propsWhen : internalWhen;
+  const setWhen = propsSetWhen || setInternalWhen;
+  const who = propsWho !== undefined ? propsWho : internalWho;
+  const setWho = propsSetWho || setInternalWho;
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (where) params.set('location', where);
+    if (when) params.set('dates', when);
+    if (who) params.set('guests', who);
+
+    navigate(`/search?${params.toString()}`);
+  };
+
   const isHero = variant === 'hero';
 
   return (
@@ -34,6 +57,7 @@ export const SearchPill = ({
           placeholder="Search destinations"
           value={where}
           onChange={(e) => setWhere?.(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           className="w-full bg-transparent text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground/60"
         />
       </div>
@@ -46,6 +70,7 @@ export const SearchPill = ({
           placeholder="Add dates"
           value={when}
           onChange={(e) => setWhen?.(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           className="w-full bg-transparent text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground/60"
         />
       </div>
@@ -59,16 +84,23 @@ export const SearchPill = ({
             placeholder="Add guests"
             value={who}
             onChange={(e) => setWho?.(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             className="w-full bg-transparent text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground/60"
           />
         </div>
-        <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground transition-transform active:scale-95">
+        <button
+          onClick={handleSearch}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground transition-transform active:scale-95"
+        >
           <Search size={18} strokeWidth={1.5} />
         </button>
       </div>
 
       {/* Mobile search button */}
-      <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground transition-transform active:scale-95 md:hidden mr-2">
+      <button
+        onClick={handleSearch}
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground transition-transform active:scale-95 md:hidden mr-2"
+      >
         <Search size={18} strokeWidth={1.5} />
       </button>
     </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, MapPin, Compass, Shield, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { MobileNav } from '@/components/MobileNav';
 import { SearchPill } from '@/components/SearchPill';
@@ -23,14 +23,32 @@ const fadeUp = {
 };
 
 const Index = () => {
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [showAll, setShowAll] = useState(false);
-  const [where, setWhere] = useState('');
-  const [when, setWhen] = useState('');
-  const [who, setWho] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeFilter = searchParams.get('category') || 'All';
+  const where = searchParams.get('location') || '';
+  const when = searchParams.get('dates') || '';
+  const who = searchParams.get('guests') || '';
 
+  const [showAll, setShowAll] = useState(false);
   const [listings, setListings] = useState<ListingData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const updateFilter = (category: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (category === 'All' || category === activeFilter) {
+      newParams.delete('category');
+    } else {
+      newParams.set('category', category);
+    }
+    setSearchParams(newParams);
+  };
+
+  const updateSearch = (key: string, value: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value) newParams.set(key, value);
+    else newParams.delete(key);
+    setSearchParams(newParams);
+  };
 
   useEffect(() => {
     fetchListings();
@@ -130,11 +148,11 @@ const Index = () => {
               <SearchPill
                 variant="hero"
                 where={where}
-                setWhere={setWhere}
+                setWhere={(val) => updateSearch('location', val)}
                 when={when}
-                setWhen={setWhen}
+                setWhen={(val) => updateSearch('dates', val)}
                 who={who}
-                setWho={setWho}
+                setWho={(val) => updateSearch('guests', val)}
               />
             </motion.div>
           </motion.div>
@@ -147,7 +165,7 @@ const Index = () => {
           {filterChips.map((chip) => (
             <button
               key={chip.label}
-              onClick={() => setActiveFilter(chip.label)}
+              onClick={() => updateFilter(chip.label)}
               className={`shrink-0 rounded-pill px-4 py-2 text-sm font-medium transition-all ${activeFilter === chip.label
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'border border-border bg-card text-foreground hover:bg-secondary'

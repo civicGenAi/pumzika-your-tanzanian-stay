@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index";
 import ListingDetail from "./pages/ListingDetail";
+import SearchResults from "./pages/SearchResults";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import BecomeHost from "./pages/BecomeHost";
@@ -26,11 +27,12 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/search" element={<SearchResults />} />
           <Route path="/listing/:id" element={<ListingDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/become-host" element={<AuthGuard><BecomeHost /></AuthGuard>} />
-          <Route path="/host-dashboard" element={<AuthGuard><HostDashboard /></AuthGuard>} />
+          <Route path="/host-dashboard/*" element={<AuthGuard><HostDashboard /></AuthGuard>} />
           <Route path="/saved" element={<AuthGuard><Saved /></AuthGuard>} />
           <Route path="/trips" element={<AuthGuard><Trips /></AuthGuard>} />
           <Route path="/inbox" element={<AuthGuard><Inbox /></AuthGuard>} />
