@@ -45,7 +45,7 @@ export const Footer = () => (
         ))}
       </div>
       <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border pt-6 text-xs text-muted-foreground md:flex-row">
-        <p>© 2025 Pumzika. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Pumzika. All rights reserved.</p>
         <div className="flex gap-4">
           <span>Privacy</span>
           <span>Terms</span>

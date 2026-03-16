@@ -49,7 +49,7 @@ const Login = () => {
                     </div>
 
                     <div className="flex gap-8 text-sm font-medium opacity-60">
-                        <span>© 2024 Pumzika</span>
+                        <span>© {new Date().getFullYear()} Pumzika</span>
                         <span>Privacy</span>
                         <span>Terms</span>
                     </div>
