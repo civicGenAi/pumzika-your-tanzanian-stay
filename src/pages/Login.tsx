@@ -7,19 +7,47 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BaobabLogo } from '@/components/BaobabLogo';
 
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
+
 const Login = () => {
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        // Simulate login
-        setTimeout(() => {
+
+        try {
+            const { error, data } = await supabase.auth.signInWithPassword({
+                email,
+                password
+            });
+
+            if (error) throw error;
+
+            toast.success('Welcome back!');
+
+            // Check role to redirect appropriately
+            const { data: profile } = await supabase
+                .from('users')
+                .select('role')
+                .eq('id', data.user.id)
+                .single();
+
+            if (profile?.role === 'host') {
+                navigate('/host-dashboard');
+            } else {
+                navigate('/');
+            }
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to login');
+        } finally {
             setIsLoading(false);
-            navigate('/');
-        }, 1500);
+        }
     };
 
     return (
@@ -87,6 +115,8 @@ const Login = () => {
                                         placeholder="name@example.com"
                                         type="email"
                                         className="pl-10"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
                                         required
                                     />
                                 </div>
@@ -105,6 +135,8 @@ const Login = () => {
                                         id="password"
                                         type={showPassword ? 'text' : 'password'}
                                         className="pl-10 pr-10"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
                                         required
                                     />
                                     <button

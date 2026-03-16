@@ -14,6 +14,7 @@ import Trips from "./pages/Trips";
 import Inbox from "./pages/Inbox";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import { AuthGuard } from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
 
@@ -28,12 +29,12 @@ const App = () => (
           <Route path="/listing/:id" element={<ListingDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/become-host" element={<BecomeHost />} />
-          <Route path="/host-dashboard" element={<HostDashboard />} />
-          <Route path="/saved" element={<Saved />} />
-          <Route path="/trips" element={<Trips />} />
-          <Route path="/inbox" element={<Inbox />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/become-host" element={<AuthGuard><BecomeHost /></AuthGuard>} />
+          <Route path="/host-dashboard" element={<AuthGuard><HostDashboard /></AuthGuard>} />
+          <Route path="/saved" element={<AuthGuard><Saved /></AuthGuard>} />
+          <Route path="/trips" element={<AuthGuard><Trips /></AuthGuard>} />
+          <Route path="/inbox" element={<AuthGuard><Inbox /></AuthGuard>} />
+          <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

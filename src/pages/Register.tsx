@@ -6,20 +6,53 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BaobabLogo } from '@/components/BaobabLogo';
+import { supabase } from '@/lib/supabase';
+import { Phone, Users } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 
 const Register = () => {
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [fullName, setFullName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [phone, setPhone] = useState('+255');
+    const [role, setRole] = useState<'guest' | 'host'>('guest');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (phone.length < 13) {
+            toast.error('Please enter a valid Tanzania phone number');
+            return;
+        }
+
         setIsLoading(true);
-        // Simulate signup
-        setTimeout(() => {
+
+        try {
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        full_name: fullName,
+                        phone: phone,
+                        role: role
+                    }
+                }
+            });
+
+            if (error) throw error;
+
+            toast.success('Registration successful! Please check your email for verification.');
+            navigate('/login');
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to create account');
+        } finally {
             setIsLoading(false);
-            navigate('/');
-        }, 1500);
+        }
     };
 
     return (
@@ -79,6 +112,20 @@ const Register = () => {
                     <div className="mt-8">
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
+                                <Label>I want to...</Label>
+                                <Tabs value={role} onValueChange={(v) => setRole(v as any)} className="w-full">
+                                    <TabsList className="grid w-full grid-cols-2">
+                                        <TabsTrigger value="guest" className="gap-2">
+                                            <User size={14} /> Book Stays
+                                        </TabsTrigger>
+                                        <TabsTrigger value="host" className="gap-2">
+                                            <Users size={14} /> Host Guests
+                                        </TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
+                            </div>
+
+                            <div className="space-y-2">
                                 <Label htmlFor="fullname">Full name</Label>
                                 <div className="relative">
                                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -86,6 +133,8 @@ const Register = () => {
                                         id="fullname"
                                         placeholder="John Doe"
                                         className="pl-10"
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
                                         required
                                     />
                                 </div>
@@ -100,6 +149,31 @@ const Register = () => {
                                         placeholder="name@example.com"
                                         type="email"
                                         className="pl-10"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Phone number</Label>
+                                <div className="relative">
+                                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="phone"
+                                        type="tel"
+                                        placeholder="+255 700 000 000"
+                                        className="pl-10"
+                                        value={phone}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (val.startsWith('+255')) {
+                                                setPhone(val);
+                                            } else if (val.length < 4) {
+                                                setPhone('+255');
+                                            }
+                                        }}
                                         required
                                     />
                                 </div>
@@ -114,6 +188,8 @@ const Register = () => {
                                         type={showPassword ? 'text' : 'password'}
                                         className="pl-10 pr-10"
                                         placeholder="Min. 8 characters"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
                                         required
                                     />
                                     <button

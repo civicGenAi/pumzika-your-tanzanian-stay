@@ -7,10 +7,23 @@ import { MobileNav } from '@/components/MobileNav';
 import { sampleListings } from '@/data/sampleData';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/lib/supabase';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 const ListingDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const [user, setUser] = useState<any>(null);
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setUser(session?.user ?? null);
+            setIsCheckingAuth(false);
+        });
+    }, []);
+
     const listing = sampleListings.find((l) => l.id === id);
 
     if (!listing) {
@@ -198,9 +211,19 @@ const ListingDetail = () => {
                                 </button>
                             </div>
 
-                            <Button className="mt-4 w-full py-6 text-lg font-semibold" size="lg">
-                                Reserve
-                            </Button>
+                            {user ? (
+                                <Button className="mt-4 w-full py-6 text-lg font-semibold" size="lg">
+                                    Reserve
+                                </Button>
+                            ) : (
+                                <Button
+                                    className="mt-4 w-full py-6 text-lg font-semibold bg-[#E8A838] text-[#1A6B4A] hover:bg-[#E8A838]/90"
+                                    size="lg"
+                                    onClick={() => navigate('/login')}
+                                >
+                                    Log in to book
+                                </Button>
+                            )}
 
                             <p className="mt-4 text-center text-sm text-muted-foreground">
                                 You won't be charged yet

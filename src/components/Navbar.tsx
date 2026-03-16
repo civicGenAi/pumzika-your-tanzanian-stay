@@ -1,11 +1,47 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { BaobabLogo } from './BaobabLogo';
 import { SearchPill } from './SearchPill';
-import { Menu, Globe, User } from 'lucide-react';
+import { Menu, Globe, User, LogOut, LayoutDashboard, Heart, Plane } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 export const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [session, setSession] = useState<any>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) fetchProfile(session.user.id);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session?.user) fetchProfile(session.user.id);
+      else setRole(null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', userId)
+      .single();
+    if (data) setRole(data.role);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setMenuOpen(false);
+    toast.success('Logged out successfully');
+    navigate('/');
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-xl">
@@ -22,12 +58,14 @@ export const Navbar = () => {
 
         {/* Right actions */}
         <div className="flex items-center gap-2">
-          <Link
-            to="/become-host"
-            className="hidden rounded-pill px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary md:block"
-          >
-            Become a Host
-          </Link>
+          {(!session || role !== 'host') && (
+            <Link
+              to="/become-host"
+              className="hidden rounded-pill px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary md:block"
+            >
+              Become a Host
+            </Link>
+          )}
           <button className="hidden rounded-full p-2 text-foreground transition-colors hover:bg-secondary md:flex">
             <Globe size={18} strokeWidth={1.5} />
           </button>
@@ -36,8 +74,12 @@ export const Navbar = () => {
             className="flex items-center gap-2 rounded-pill border border-border bg-card px-3 py-2 shadow-sm transition-shadow hover:shadow-card"
           >
             <Menu size={16} strokeWidth={1.5} className="text-foreground" />
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary">
-              <User size={14} strokeWidth={1.5} className="text-primary-foreground" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary overflow-hidden">
+              {session?.user?.user_metadata?.avatar_url ? (
+                <img src={session.user.user_metadata.avatar_url} alt="Profile" className="h-full w-full object-cover" />
+              ) : (
+                <User size={14} strokeWidth={1.5} className="text-primary-foreground" />
+              )}
             </div>
           </button>
         </div>
@@ -50,12 +92,49 @@ export const Navbar = () => {
 
       {/* Dropdown menu */}
       {menuOpen && (
-        <div className="absolute right-4 top-full mt-2 w-56 rounded-lg border border-border bg-card py-2 shadow-card-hover">
-          <Link to="/auth/login" className="block px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>Log in</Link>
-          <Link to="/auth/register" className="block px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>Sign up</Link>
-          <div className="my-1 border-t border-border" />
-          <Link to="/become-host" className="block px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>Become a Host</Link>
-          <Link to="/host/dashboard" className="block px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>Host Dashboard</Link>
+        <div className="absolute right-4 top-full mt-2 w-64 rounded-xl border border-border bg-card py-2 shadow-xl ring-1 ring-black/5 animate-in fade-in zoom-in duration-200">
+          {session ? (
+            <>
+              <div className="px-4 py-3 border-b border-border mb-1">
+                <p className="text-sm font-semibold truncate">{session.user.user_metadata.full_name || session.user.email}</p>
+                <p className="text-xs text-muted-foreground truncate italic capitalize">{role || 'Guest'}</p>
+              </div>
+              <Link to="/profile" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>
+                <User size={16} /> My Profile
+              </Link>
+              <Link to="/saved" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>
+                <Heart size={16} /> Wishlists
+              </Link>
+              <Link to="/trips" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>
+                <Plane size={16} /> Trips
+              </Link>
+              <div className="my-1 border-t border-border" />
+              {role === 'host' ? (
+                <Link to="/host-dashboard" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-primary hover:bg-secondary" onClick={() => setMenuOpen(false)}>
+                  <LayoutDashboard size={16} /> Host Dashboard
+                </Link>
+              ) : (
+                <Link to="/become-host" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>
+                  Become a Host
+                </Link>
+              )}
+              <div className="my-1 border-t border-border" />
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/5"
+              >
+                <LogOut size={16} /> Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="block px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>Log in</Link>
+              <Link to="/register" className="block px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>Sign up</Link>
+              <div className="my-1 border-t border-border" />
+              <Link to="/become-host" className="block px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>Become a Host</Link>
+              <button className="block w-full text-left px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>Help Center</button>
+            </>
+          )}
         </div>
       )}
     </header>
