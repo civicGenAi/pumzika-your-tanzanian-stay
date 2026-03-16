@@ -56,14 +56,118 @@ const StatCard = ({ title, value, trend, icon: Icon, color }: any) => (
 
 import { cn } from '@/lib/utils';
 
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Skeleton } from '@/components/ui/skeleton';
+
 export const DashboardOverview = () => {
+    const [stats, setStats] = useState({
+        totalEarned: 0,
+        activeListings: 0,
+        totalBookings: 0,
+        averageRating: 0,
+        hostName: 'Host'
+    });
+    const [upcomingBookings, setUpcomingBookings] = useState<any[]>([]);
+    const [recentReviews, setRecentReviews] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+    const fetchDashboardData = async () => {
+        setIsLoading(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+
+            const hostId = session.user.id;
+            const hostName = session.user.user_metadata.full_name?.split(' ')[0] || 'Tanzania Host';
+
+            // 1. Fetch Listings Count
+            const { count: listingsCount } = await supabase
+                .from('listings')
+                .select('*', { count: 'exact', head: true })
+                .eq('host_id', hostId)
+                .eq('status', 'published');
+
+            // 2. Fetch Bookings and Earnings
+            const { data: bookingsData } = await supabase
+                .from('bookings')
+                .select(`
+                    *,
+                    listing:listings(title),
+                    guest:users(full_name, avatar_url)
+                `)
+                .eq('host_id', hostId);
+
+            const totalBookings = bookingsData?.length || 0;
+            const totalEarned = bookingsData?.reduce((acc, curr) =>
+                curr.status === 'confirmed' || curr.status === 'completed'
+                    ? acc + Number(curr.total_host_receives)
+                    : acc, 0) || 0;
+
+            const upcoming = bookingsData?.filter(b =>
+                new Date(b.check_in) >= new Date() &&
+                (b.status === 'confirmed' || b.status === 'pending_approval')
+            ).sort((a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime()).slice(0, 5) || [];
+
+            // 3. Fetch Average Rating
+            const { data: reviewsData } = await supabase
+                .from('reviews')
+                .select(`
+                    *,
+                    reviewer:users(full_name, avatar_url)
+                `)
+                .eq('reviewee_id', hostId)
+                .order('created_at', { ascending: false });
+
+            const avgRating = reviewsData && reviewsData.length > 0
+                ? reviewsData.reduce((acc, curr) => acc + curr.overall_rating, 0) / reviewsData.length
+                : 5.0;
+
+            setStats({
+                totalEarned,
+                activeListings: listingsCount || 0,
+                totalBookings,
+                averageRating: Number(avgRating.toFixed(2)),
+                hostName
+            });
+            setUpcomingBookings(upcoming);
+            setRecentReviews(reviewsData?.slice(0, 3) || []);
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="space-y-8">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div className="space-y-2">
+                        <Skeleton className="h-8 w-64" />
+                        <Skeleton className="h-4 w-48" />
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {Array(4).fill(0).map((_, i) => (
+                        <Skeleton key={i} className="h-32 rounded-2xl" />
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="space-y-1">
                     <h2 className="font-display text-2xl font-bold tracking-tight text-[#1A6B4A] md:text-3xl">
-                        Good morning, Tanzania Host 👋
+                        Good morning, {stats.hostName} 👋
                     </h2>
                     <p className="text-muted-foreground">Here's what's happening with your properties</p>
                 </div>
@@ -76,29 +180,29 @@ export const DashboardOverview = () => {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     title="Total Earned"
-                    value="TSh 1.2M"
-                    trend="+12.5%"
+                    value={`TSh ${(stats.totalEarned / 1000000).toFixed(1)}M`}
+                    trend="+0%"
                     icon={DollarSign}
                     color="text-emerald-600"
                 />
                 <StatCard
                     title="Active Listings"
-                    value="3"
+                    value={stats.activeListings.toString()}
                     trend="0%"
                     icon={Home}
                     color="text-blue-600"
                 />
                 <StatCard
                     title="Total Bookings"
-                    value="48"
-                    trend="+8%"
+                    value={stats.totalBookings.toString()}
+                    trend="+0%"
                     icon={Calendar}
                     color="text-purple-600"
                 />
                 <StatCard
                     title="Average Rating"
-                    value="4.95"
-                    trend="+0.02"
+                    value={stats.averageRating.toString()}
+                    trend="0.0"
                     icon={Star}
                     color="text-amber-500"
                 />
@@ -170,40 +274,40 @@ export const DashboardOverview = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border">
-                                        {[
-                                            { name: 'Samiya Suluhu', avatar: '', property: 'The Dhow House', date: 'Mar 18', nights: 3, status: 'Arriving today', color: 'bg-emerald-500' },
-                                            { name: 'John Momis', avatar: '', property: 'Baobab Garden', date: 'Mar 19', nights: 5, status: 'Tomorrow', color: 'bg-amber-400' },
-                                            { name: 'Anna Petro', avatar: '', property: 'Kibo Summit', date: 'Mar 22', nights: 2, status: 'Pending approval', color: 'bg-orange-400' },
-                                        ].map((item, i) => (
-                                            <tr key={i} className="hover:bg-[#FDF6EE]/50 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <Avatar className="h-8 w-8">
-                                                            <AvatarFallback className="bg-[#1A6B4A]/10 text-[#1A6B4A] text-[10px]">{item.name[0]}</AvatarFallback>
-                                                        </Avatar>
-                                                        <span className="text-sm font-semibold">{item.name}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-sm font-medium">{item.property}</td>
-                                                <td className="px-6 py-4 text-sm text-muted-foreground">{item.date}</td>
-                                                <td className="px-6 py-4 text-sm font-medium">{item.nights}</td>
-                                                <td className="px-6 py-4">
-                                                    <Badge className={cn("rounded-full border-none px-3 py-1 text-[10px] font-bold text-white", item.color)}>
-                                                        {item.status}
-                                                    </Badge>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    {item.status === 'Pending approval' ? (
-                                                        <div className="flex gap-2">
-                                                            <Button size="sm" className="h-7 bg-emerald-500 hover:bg-emerald-600 py-0 text-[10px]">Confirm</Button>
-                                                            <Button size="sm" variant="outline" className="h-7 py-0 text-[10px]">Decline</Button>
-                                                        </div>
-                                                    ) : (
-                                                        <Button variant="ghost" size="sm" className="h-7 text-[10px]">Details</Button>
-                                                    )}
+                                        {upcomingBookings.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground text-sm">
+                                                    No upcoming check-ins found.
                                                 </td>
                                             </tr>
-                                        ))}
+                                        ) : (
+                                            upcomingBookings.map((item, i) => (
+                                                <tr key={i} className="hover:bg-[#FDF6EE]/50 transition-colors">
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <Avatar className="h-8 w-8">
+                                                                <AvatarFallback className="bg-[#1A6B4A]/10 text-[#1A6B4A] text-[10px]">{item.guest?.full_name[0]}</AvatarFallback>
+                                                            </Avatar>
+                                                            <span className="text-sm font-semibold">{item.guest?.full_name}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm font-medium">{item.listing?.title}</td>
+                                                    <td className="px-6 py-4 text-sm text-muted-foreground">
+                                                        {new Date(item.check_in).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm font-medium">{item.total_nights}</td>
+                                                    <td className="px-6 py-4">
+                                                        <Badge className={cn("rounded-full border-none px-3 py-1 text-[10px] font-bold text-white",
+                                                            item.status === 'confirmed' ? 'bg-emerald-500' : 'bg-amber-400')}>
+                                                            {item.status}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <Button variant="ghost" size="sm" className="h-7 text-[10px]">Details</Button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -240,29 +344,33 @@ export const DashboardOverview = () => {
                             <Button variant="link" className="h-auto p-0 text-xs font-bold text-[#1A6B4A]">View all</Button>
                         </div>
                         <div className="space-y-4">
-                            {[
-                                { name: 'Sarah G.', date: '2 days ago', stars: 5, comment: 'Amazing stay! The host was super helpful with local tips.' },
-                                { name: 'Michel L.', date: '1 week ago', stars: 5, comment: 'The view of Kilimanjaro is unbeatable. Highly recommend!' },
-                                { name: 'David W.', date: '2 weeks ago', stars: 4, comment: 'Clean, modern, and perfectly located in Arusha.' },
-                            ].map((review, i) => (
-                                <Card key={i} className="rounded-2xl border-none shadow-sm overflow-hidden">
-                                    <CardContent className="p-4 space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-6 w-6">
-                                                    <AvatarFallback className="bg-amber-100 text-amber-700 text-[8px] font-bold">{review.name[0]}</AvatarFallback>
-                                                </Avatar>
-                                                <span className="text-xs font-bold">{review.name}</span>
-                                            </div>
-                                            <span className="text-[10px] text-muted-foreground">{review.date}</span>
-                                        </div>
-                                        <div className="flex gap-0.5 text-amber-400">
-                                            {Array.from({ length: review.stars }).map((_, j) => <Star key={j} size={10} fill="currentColor" />)}
-                                        </div>
-                                        <p className="text-[11px] text-muted-foreground line-clamp-2 italic">"{review.comment}"</p>
-                                    </CardContent>
+                            {recentReviews.length === 0 ? (
+                                <Card className="rounded-2xl border-none shadow-sm overflow-hidden p-4 text-center text-muted-foreground text-xs">
+                                    No reviews yet.
                                 </Card>
-                            ))}
+                            ) : (
+                                recentReviews.map((review, i) => (
+                                    <Card key={i} className="rounded-2xl border-none shadow-sm overflow-hidden">
+                                        <CardContent className="p-4 space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <Avatar className="h-6 w-6">
+                                                        <AvatarFallback className="bg-amber-100 text-amber-700 text-[8px] font-bold">{review.reviewer?.full_name[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="text-xs font-bold">{review.reviewer?.full_name}</span>
+                                                </div>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                    {new Date(review.created_at).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                            <div className="flex gap-0.5 text-amber-400">
+                                                {Array.from({ length: review.overall_rating }).map((_, j) => <Star key={j} size={10} fill="currentColor" />)}
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground line-clamp-2 italic">"{review.comment}"</p>
+                                        </CardContent>
+                                    </Card>
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>

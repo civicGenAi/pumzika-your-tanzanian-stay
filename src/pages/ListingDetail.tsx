@@ -4,10 +4,11 @@ import { Star, MapPin, Heart, Share, Shield, Zap, Calendar } from 'lucide-react'
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
-import { sampleListings } from '@/data/sampleData';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/lib/supabase';
+import { calculatePrice } from '@/lib/pricing';
+import { isDateRangeAvailable } from '@/lib/availability';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -15,16 +16,80 @@ const ListingDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [user, setUser] = useState<any>(null);
-    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+    const [listing, setListing] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Booking states
+    const [checkIn, setCheckIn] = useState<Date | null>(null);
+    const [checkOut, setCheckOut] = useState<Date | null>(null);
+    const [guests, setGuests] = useState(1);
+    const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+    const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             setUser(session?.user ?? null);
-            setIsCheckingAuth(false);
         });
-    }, []);
+        fetchListing();
+    }, [id]);
 
-    const listing = sampleListings.find((l) => l.id === id);
+    useEffect(() => {
+        if (checkIn && checkOut && id) {
+            checkDates();
+        } else {
+            setIsAvailable(null);
+        }
+    }, [checkIn, checkOut, id]);
+
+    const checkDates = async () => {
+        if (!checkIn || !checkOut || !id) return;
+        setIsCheckingAvailability(true);
+        try {
+            const startDate = checkIn.toISOString().split('T')[0];
+            const endDate = checkOut.toISOString().split('T')[0];
+            const result = await isDateRangeAvailable(id, startDate, endDate);
+            setIsAvailable(result.isAvailable);
+            if (!result.isAvailable) {
+                toast.error('Those dates are already booked. Please try different ones.');
+            }
+        } catch (error) {
+            console.error('Availability check failed:', error);
+        } finally {
+            setIsCheckingAvailability(false);
+        }
+    };
+
+    const fetchListing = async () => {
+        setIsLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('listings')
+                .select(`
+                    *,
+                    listing_images(*),
+                    host:users(*)
+                `)
+                .eq('id', id)
+                .single();
+
+            if (error) throw error;
+            setListing(data);
+        } catch (error) {
+            console.error('Error fetching listing:', error);
+            toast.error('Could not load listing details');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex min-h-screen flex-col items-center justify-center space-y-4">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                <p className="text-muted-foreground animate-pulse">Loading Tanzanian hospitality...</p>
+            </div>
+        );
+    }
 
     if (!listing) {
         return (
@@ -35,7 +100,17 @@ const ListingDetail = () => {
         );
     }
 
-    const images = listing.images || [listing.image];
+    const images = listing.listing_images?.sort((a: any, b: any) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0)).map((img: any) => img.url) || [];
+    if (images.length === 0) images.push('https://images.unsplash.com/photo-1512918766675-ed406e3c7432?w=1200&fit=crop');
+
+    const pricing = checkIn && checkOut && isAvailable ? calculatePrice({
+        basePrice: Number(listing.base_price),
+        cleaningFee: Number(listing.cleaning_fee || 0),
+        securityDeposit: Number(listing.security_deposit || 0),
+        checkIn,
+        checkOut,
+        weekendMultiplier: Number(listing.weekend_price_multiplier || 1.0)
+    }) : null;
 
     return (
         <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -62,10 +137,10 @@ const ListingDetail = () => {
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1 font-semibold">
                                 <Star size={14} className="fill-foreground" />
-                                <span>{listing.rating}</span>
-                                <span className="font-normal text-muted-foreground underline">({listing.reviews} reviews)</span>
+                                <span>{listing.average_rating || 'New'}</span>
+                                <span className="font-normal text-muted-foreground underline">({listing.review_count || 0} reviews)</span>
                             </div>
-                            {listing.isSuperhost && (
+                            {listing.host?.is_superhost && (
                                 <div className="flex items-center gap-1">
                                     <Shield size={14} />
                                     <span className="font-semibold">Superhost</span>
@@ -73,7 +148,7 @@ const ListingDetail = () => {
                             )}
                             <div className="flex items-center gap-1 underline underline-offset-2">
                                 <MapPin size={14} />
-                                <span className="font-medium">{listing.location}</span>
+                                <span className="font-medium">{listing.region}, {listing.destination}</span>
                             </div>
                         </div>
                     </div>
@@ -89,7 +164,7 @@ const ListingDetail = () => {
                                 className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                             />
                         </div>
-                        {images.slice(1, 5).map((img, i) => (
+                        {images.slice(1, 5).map((img: any, i: number) => (
                             <div key={i} className="relative hidden overflow-hidden md:block">
                                 <img
                                     src={img}
@@ -115,19 +190,23 @@ const ListingDetail = () => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <h2 className="font-display text-xl font-semibold md:text-2xl">
-                                    Hosted by {listing.isSuperhost ? 'a Superhost' : 'Pumzika Host'}
+                                    Hosted by {listing.host?.full_name?.split(' ')[0] || 'Host'}
                                 </h2>
-                                <p className="mt-1 text-muted-foreground">
-                                    Entire home in {listing.city} · 4 guests · 2 bedrooms · 2 beds · 1 bath
+                                <p className="mt-1 text-muted-foreground capitalize">
+                                    {listing.property_type} in {listing.region} · {listing.max_guests} guests · {listing.bedrooms} bedrooms · {listing.beds} beds · {listing.bathrooms} bath
                                 </p>
                             </div>
-                            <div className="h-12 w-12 rounded-full bg-secondary" />
+                            <div className="h-12 w-12 rounded-full bg-secondary overflow-hidden">
+                                {listing.host?.avatar_url && (
+                                    <img src={listing.host.avatar_url} alt={listing.host.full_name} className="h-full w-full object-cover" />
+                                )}
+                            </div>
                         </div>
 
                         <Separator className="my-8" />
 
                         <div className="space-y-6">
-                            {listing.isSuperhost && (
+                            {listing.host?.is_superhost && (
                                 <div className="flex gap-4">
                                     <Shield className="mt-1 shrink-0 text-primary" size={24} />
                                     <div>
@@ -165,18 +244,20 @@ const ListingDetail = () => {
 
                         <Separator className="my-8" />
 
-                        {/* Amenities (Placeholder for now) */}
+                        {/* Amenities */}
                         <div className="space-y-4">
                             <h3 className="font-display text-xl font-semibold">What this place offers</h3>
                             <div className="grid grid-cols-2 gap-4">
-                                {['Wifi', 'Kitchen', 'Free parking', 'Air conditioning', 'Dedicated workspace', 'Beach access'].map((item) => (
-                                    <div key={item} className="flex items-center gap-4 text-muted-foreground">
-                                        <div className="h-2 w-2 rounded-full bg-primary/40" />
+                                {(listing.amenities || []).slice(0, 10).map((item: string) => (
+                                    <div key={item} className="flex items-center gap-4 text-muted-foreground text-sm">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-primary/60" />
                                         <span>{item}</span>
                                     </div>
                                 ))}
                             </div>
-                            <Button variant="outline" className="mt-4">Show all 45 amenities</Button>
+                            {(listing.amenities?.length || 0) > 10 && (
+                                <Button variant="outline" className="mt-4">Show all {listing.amenities.length} amenities</Button>
+                            )}
                         </div>
                     </div>
 
@@ -185,37 +266,49 @@ const ListingDetail = () => {
                         <div className="sticky top-28 rounded-2xl border border-border bg-card p-6 shadow-xl">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <span className="text-xl font-bold md:text-2xl">TSh {listing.price.toLocaleString()}</span>
+                                    <span className="text-xl font-bold md:text-2xl">TSh {Number(listing.base_price).toLocaleString()}</span>
                                     <span className="text-muted-foreground"> / night</span>
                                 </div>
                                 <div className="flex items-center gap-1 text-sm font-semibold">
                                     <Star size={14} className="fill-foreground" />
-                                    <span>{listing.rating}</span>
+                                    <span>{listing.average_rating || 'New'}</span>
                                 </div>
                             </div>
 
                             <div className="mt-6 space-y-0 rounded-xl border border-border">
                                 <div className="grid grid-cols-2 divide-x divide-border">
-                                    <button className="flex flex-col p-3 text-left transition-colors hover:bg-muted/50">
+                                    <div className="flex flex-col p-3 text-left transition-colors hover:bg-muted/50 cursor-pointer">
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Check-in</span>
-                                        <span className="text-sm">Add date</span>
-                                    </button>
-                                    <button className="flex flex-col p-3 text-left transition-colors hover:bg-muted/50">
+                                        <input
+                                            type="date"
+                                            className="bg-transparent border-none p-0 text-sm focus:ring-0"
+                                            onChange={(e) => setCheckIn(e.target.value ? new Date(e.target.value) : null)}
+                                        />
+                                    </div>
+                                    <div className="flex flex-col p-3 text-left transition-colors hover:bg-muted/50 cursor-pointer">
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Checkout</span>
-                                        <span className="text-sm">Add date</span>
-                                    </button>
+                                        <input
+                                            type="date"
+                                            className="bg-transparent border-none p-0 text-sm focus:ring-0"
+                                            onChange={(e) => setCheckOut(e.target.value ? new Date(e.target.value) : null)}
+                                        />
+                                    </div>
                                 </div>
-                                <button className="flex w-full flex-col border-t border-border p-3 text-left transition-colors hover:bg-muted/50">
+                                <div className="flex w-full flex-col border-t border-border p-3 text-left transition-colors hover:bg-muted/50">
                                     <span className="text-[10px] font-bold uppercase tracking-wider">Guests</span>
-                                    <span className="text-sm">1 guest</span>
-                                </button>
+                                    <select
+                                        className="bg-transparent border-none p-0 text-sm focus:ring-0"
+                                        value={guests}
+                                        onChange={(e) => setGuests(Number(e.target.value))}
+                                    >
+                                        {[...Array(listing.max_guests)].map((_, i) => (
+                                            <option key={i} value={i + 1}>{i + 1} guest{i > 0 ? 's' : ''}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
-                            {user ? (
-                                <Button className="mt-4 w-full py-6 text-lg font-semibold" size="lg">
-                                    Reserve
-                                </Button>
-                            ) : (
+                            {!user ? (
                                 <Button
                                     className="mt-4 w-full py-6 text-lg font-semibold bg-[#E8A838] text-[#1A6B4A] hover:bg-[#E8A838]/90"
                                     size="lg"
@@ -223,31 +316,50 @@ const ListingDetail = () => {
                                 >
                                     Log in to book
                                 </Button>
+                            ) : (
+                                <Button
+                                    className="mt-4 w-full py-6 text-lg font-semibold"
+                                    size="lg"
+                                    disabled={!pricing || isCheckingAvailability || isAvailable === false}
+                                    onClick={() => toast.success('Reservation logic coming in Phase 4!')}
+                                >
+                                    {isCheckingAvailability ? 'Checking...' : isAvailable === false ? 'Dates unavailable' : pricing ? 'Reserve' : 'Select dates'}
+                                </Button>
                             )}
 
                             <p className="mt-4 text-center text-sm text-muted-foreground">
                                 You won't be charged yet
                             </p>
 
-                            <div className="mt-6 space-y-3 text-sm">
-                                <div className="flex justify-between text-muted-foreground">
-                                    <span className="underline">TSh {listing.price.toLocaleString()} x 5 nights</span>
-                                    <span>TSh {(listing.price * 5).toLocaleString()}</span>
+                            {pricing && (
+                                <div className="mt-6 space-y-3 text-sm">
+                                    <div className="flex justify-between text-muted-foreground">
+                                        <span className="underline">TSh {Number(listing.base_price).toLocaleString()} x {pricing.totalNights} nights</span>
+                                        <span>TSh {pricing.nightlySubtotal.toLocaleString()}</span>
+                                    </div>
+                                    {pricing.cleaningFee > 0 && (
+                                        <div className="flex justify-between text-muted-foreground">
+                                            <span className="underline">Cleaning fee</span>
+                                            <span>TSh {pricing.cleaningFee.toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between text-muted-foreground">
+                                        <span className="underline">Pumzika service fee (14%)</span>
+                                        <span>TSh {pricing.serviceFee.toLocaleString()}</span>
+                                    </div>
+                                    {pricing.securityDeposit > 0 && (
+                                        <div className="flex justify-between text-muted-foreground">
+                                            <span className="underline">Security deposit</span>
+                                            <span>TSh {pricing.securityDeposit.toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                    <Separator />
+                                    <div className="flex justify-between font-bold">
+                                        <span>Total</span>
+                                        <span>TSh {pricing.totalGuestPays.toLocaleString()}</span>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between text-muted-foreground">
-                                    <span className="underline">Cleaning fee</span>
-                                    <span>TSh 25,000</span>
-                                </div>
-                                <div className="flex justify-between text-muted-foreground">
-                                    <span className="underline">Pumzika service fee</span>
-                                    <span>TSh 15,000</span>
-                                </div>
-                                <Separator />
-                                <div className="flex justify-between font-bold">
-                                    <span>Total before taxes</span>
-                                    <span>TSh {(listing.price * 5 + 40000).toLocaleString()}</span>
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </section>

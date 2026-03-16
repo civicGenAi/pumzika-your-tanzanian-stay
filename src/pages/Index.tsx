@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, MapPin, Compass, Shield, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { MobileNav } from '@/components/MobileNav';
 import { SearchPill } from '@/components/SearchPill';
-import { ListingCard } from '@/components/ListingCard';
+import { ListingCard, ListingData } from '@/components/ListingCard';
 import { DestinationCard } from '@/components/DestinationCard';
 import { Footer } from '@/components/Footer';
-import { sampleListings, destinations, filterChips } from '@/data/sampleData';
+import { destinations, filterChips } from '@/data/sampleData';
+import { supabase } from '@/lib/supabase';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const stagger = {
   hidden: {},
@@ -27,22 +29,69 @@ const Index = () => {
   const [when, setWhen] = useState('');
   const [who, setWho] = useState('');
 
-  const filtered = sampleListings.filter((listing) => {
-    // Category/Badge filter
-    const matchesFilter = activeFilter === 'All' ||
-      listing.city.toLowerCase() === activeFilter.toLowerCase() ||
-      listing.badges.some((b) => b.toLowerCase() === activeFilter.toLowerCase());
+  const [listings, setListings] = useState<ListingData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-    // Search filter (Where)
-    const matchesWhere = !where ||
-      listing.city.toLowerCase().includes(where.toLowerCase()) ||
-      listing.location.toLowerCase().includes(where.toLowerCase()) ||
-      listing.title.toLowerCase().includes(where.toLowerCase());
+  useEffect(() => {
+    fetchListings();
+  }, [activeFilter, where]); // Re-fetch on filter change
 
-    return matchesFilter && matchesWhere;
-  });
+  const fetchListings = async () => {
+    setIsLoading(true);
+    try {
+      let query = supabase
+        .from('listings')
+        .select(`
+          *,
+          listing_images(url, is_primary),
+          host:users(is_superhost)
+        `)
+        .eq('status', 'published');
 
-  const displayed = showAll ? filtered : filtered.slice(0, 8);
+      // Simple filtering (can expand later)
+      if (activeFilter !== 'All') {
+        const isDestination = destinations.some(d => d.name === activeFilter);
+        if (isDestination) {
+          query = query.eq('destination', activeFilter.toLowerCase());
+        } else {
+          // Check amenities
+          query = query.contains('amenities', [activeFilter]);
+        }
+      }
+
+      if (where) {
+        query = query.ilike('region', `%${where}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const formattedData: ListingData[] = (data || []).map(item => ({
+        id: item.id,
+        title: item.title,
+        location: `${item.region}, ${item.destination}`,
+        city: item.destination,
+        price: Number(item.base_price),
+        usdPrice: Math.round(Number(item.base_price) / 2600), // Conversion approx
+        rating: item.average_rating || 5.0,
+        reviews: item.review_count || 0,
+        image: item.listing_images?.find((img: any) => img.is_primary)?.url || item.listing_images?.[0]?.url || 'https://images.unsplash.com/photo-1512918766675-ed406e3c7432?w=800&fit=crop',
+        badges: item.amenities || [],
+        isSuperhost: item.host?.is_superhost || false,
+        instantBook: item.instant_book,
+        description: item.description
+      }));
+
+      setListings(formattedData);
+    } catch (error) {
+      console.error('Error fetching listings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const displayed = showAll ? listings : listings.slice(0, 8);
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -123,14 +172,24 @@ const Index = () => {
         </motion.h2>
 
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
-          {displayed.map((listing, i) => (
-            <Link to={`/listing/${listing.id}`} key={listing.id}>
-              <ListingCard listing={listing} index={i} />
-            </Link>
-          ))}
+          {isLoading ? (
+            Array(8).fill(0).map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))
+          ) : (
+            displayed.map((listing, i) => (
+              <Link to={`/listing/${listing.id}`} key={listing.id}>
+                <ListingCard listing={listing} index={i} />
+              </Link>
+            ))
+          )}
         </div>
 
-        {!showAll && filtered.length > 8 && (
+        {!showAll && listings.length > 8 && (
           <div className="mt-8 text-center">
             <button
               onClick={() => setShowAll(true)}
@@ -141,9 +200,9 @@ const Index = () => {
           </div>
         )}
 
-        {filtered.length === 0 && (
+        {!isLoading && listings.length === 0 && (
           <div className="py-16 text-center">
-            <p className="text-lg text-muted-foreground">No stays found. Try a different filter.</p>
+            <p className="text-lg text-muted-foreground">No stays found in this category. Try a different filter.</p>
           </div>
         )}
       </section>
