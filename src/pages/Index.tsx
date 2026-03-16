@@ -164,7 +164,7 @@ const Index = () => {
             <div className="absolute left-[16.6%] right-[16.6%] top-8 hidden border-t-2 border-dashed border-border md:block" />
 
             {[
-              { icon: Search, title: 'Search your destination', desc: 'Browse hundreds of verified stays across Tanzania's top destinations.' },
+              { icon: Search, title: 'Search your destination', desc: "Browse hundreds of verified stays across Tanzania's top destinations." },
               { icon: Shield, title: 'Book with confidence', desc: 'Secure payments, verified hosts, and flexible cancellation policies.' },
               { icon: Compass, title: 'Enjoy your stay', desc: 'Check in seamlessly and experience Tanzanian hospitality at its finest.' },
             ].map((step, i) => (
