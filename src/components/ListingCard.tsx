@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Star, Heart, Zap, MapPin } from 'lucide-react';
+import { Star, Heart, Zap, MapPin, Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 export interface ListingData {
   id: string;
@@ -22,10 +24,76 @@ export interface ListingData {
 interface ListingCardProps {
   listing: ListingData;
   index?: number;
+  onWishlistToggle?: (listingId: string, isSaved: boolean) => void;
 }
 
-export const ListingCard = ({ listing, index = 0 }: ListingCardProps) => {
+export const ListingCard = ({ listing, index = 0, onWishlistToggle }: ListingCardProps) => {
   const [saved, setSaved] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    checkWishlistStatus();
+  }, [listing.id]);
+
+  const checkWishlistStatus = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { data, error } = await supabase
+      .from('wishlists')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .eq('listing_id', listing.id)
+      .single();
+
+    if (data) setSaved(true);
+  };
+
+  const toggleWishlist = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error('Please login to save listings');
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      if (saved) {
+        const { error } = await supabase
+          .from('wishlists')
+          .delete()
+          .eq('user_id', session.user.id)
+          .eq('listing_id', listing.id);
+
+        if (error) throw error;
+        setSaved(false);
+        toast.success('Removed from wishlist');
+      } else {
+        const { error } = await supabase
+          .from('wishlists')
+          .insert({
+            user_id: session.user.id,
+            listing_id: listing.id
+          });
+
+        if (error) throw error;
+        setSaved(true);
+        toast.success('Saved to wishlist');
+      }
+
+      if (onWishlistToggle) {
+        onWishlistToggle(listing.id, !saved);
+      }
+    } catch (error: any) {
+      console.error('Wishlist error:', error);
+      toast.error('Failed to update wishlist');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <motion.div
@@ -45,14 +113,19 @@ export const ListingCard = ({ listing, index = 0 }: ListingCardProps) => {
 
         {/* Save button */}
         <button
-          onClick={(e) => { e.stopPropagation(); setSaved(!saved); }}
-          className="absolute right-3 top-3 rounded-full bg-card/20 p-2 backdrop-blur-md transition-all hover:bg-card/40 active:scale-90"
+          onClick={toggleWishlist}
+          disabled={isUpdating}
+          className="absolute right-3 top-3 rounded-full bg-card/20 p-2 backdrop-blur-md transition-all hover:bg-card/40 active:scale-90 disabled:opacity-50"
         >
-          <Heart
-            size={18}
-            strokeWidth={1.5}
-            className={saved ? 'fill-destructive text-destructive' : 'text-card'}
-          />
+          {isUpdating ? (
+            <Loader2 size={18} className="animate-spin text-card" />
+          ) : (
+            <Heart
+              size={18}
+              strokeWidth={1.5}
+              className={saved ? 'fill-destructive text-destructive' : 'text-card'}
+            />
+          )}
         </button>
 
         {/* Badges */}
@@ -62,7 +135,7 @@ export const ListingCard = ({ listing, index = 0 }: ListingCardProps) => {
               Superhost
             </span>
           )}
-          {listing.badges.map((badge) => (
+          {listing.badges?.map((badge) => (
             <span
               key={badge}
               className="rounded-pill bg-primary/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-primary-foreground backdrop-blur-sm"

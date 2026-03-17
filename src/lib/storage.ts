@@ -59,3 +59,27 @@ export const deleteListingImage = async (imageUrl: string, imageId: string) => {
 
     if (error) throw error;
 };
+
+export const uploadAvatar = async (userId: string, file: File) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+    const { error: dbError } = await supabase
+        .from('users')
+        .update({ avatar_url: publicUrl })
+        .eq('id', userId);
+
+    if (dbError) throw dbError;
+
+    return publicUrl;
+};
