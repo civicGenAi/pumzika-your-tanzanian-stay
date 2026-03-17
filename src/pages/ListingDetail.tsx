@@ -413,7 +413,14 @@ const ListingDetail = () => {
                                     className="mt-4 w-full py-6 text-lg font-semibold"
                                     size="lg"
                                     disabled={!pricing || isCheckingAvailability || isAvailable === false}
-                                    onClick={() => toast.success('Reservation logic coming in Phase 4!')}
+                                    onClick={() => navigate('/checkout', {
+                                        state: {
+                                            listing,
+                                            pricing,
+                                            dates: { checkIn, checkOut },
+                                            guests
+                                        }
+                                    })}
                                 >
                                     {isCheckingAvailability ? 'Checking...' : isAvailable === false ? 'Dates unavailable' : pricing ? 'Reserve' : 'Select dates'}
                                 </Button>

@@ -111,7 +111,7 @@ const Trips = () => {
                                             <div className="space-y-1">
                                                 <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Total Paid</span>
                                                 <div className="flex items-center gap-2 font-bold text-primary">
-                                                    TSh {trip.total_guest_pays.toLocaleString()}
+                                                    TSh {Number(trip.total_price || 0).toLocaleString()}
                                                 </div>
                                             </div>
                                         </div>

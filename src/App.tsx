@@ -14,6 +14,8 @@ import Saved from "./pages/Saved";
 import Trips from "./pages/Trips";
 import Inbox from "./pages/Inbox";
 import Profile from "./pages/Profile";
+import Checkout from "./pages/Checkout";
+import BookingSuccess from "./pages/BookingSuccess";
 import NotFound from "./pages/NotFound";
 import { AuthGuard } from "./components/AuthGuard";
 
@@ -37,6 +39,8 @@ const App = () => (
           <Route path="/trips" element={<AuthGuard><Trips /></AuthGuard>} />
           <Route path="/inbox" element={<AuthGuard><Inbox /></AuthGuard>} />
           <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
+          <Route path="/checkout" element={<AuthGuard><Checkout /></AuthGuard>} />
+          <Route path="/booking-confirmation" element={<AuthGuard><BookingSuccess /></AuthGuard>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
