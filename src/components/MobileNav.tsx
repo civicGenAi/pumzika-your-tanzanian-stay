@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 const guestItems = [
   { icon: Search, label: 'Explore', path: '/' },
   { icon: Heart, label: 'Saved', path: '/saved' },
-  { icon: Map, label: 'Trips', path: '/bookings' },
+  { icon: Map, label: 'Trips', path: '/trips' },
   { icon: MessageSquare, label: 'Inbox', path: '/inbox' },
   { icon: User, label: 'Profile', path: '/profile' },
 ];

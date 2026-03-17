@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BaobabLogo } from './BaobabLogo';
 import { SearchPill } from './SearchPill';
-import { Menu, Globe, User, LogOut, LayoutDashboard, Heart, Plane } from 'lucide-react';
+import { Menu, Globe, User, LogOut, LayoutDashboard, Heart, Plane, MessageSquare } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -82,7 +82,7 @@ export const Navbar = () => {
               {session?.user?.user_metadata?.avatar_url ? (
                 <img src={session.user.user_metadata.avatar_url} alt="Profile" className="h-full w-full object-cover" />
               ) : (
-                <User size={14} strokeWidth={1.5} className="text-primary-foreground" />
+                <img src="/pumzika-icon-alt.png" alt="Profile" className="h-full w-full object-cover" />
               )}
             </div>
           </button>
@@ -113,6 +113,9 @@ export const Navbar = () => {
               </Link>
               <Link to="/trips" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>
                 <Plane size={16} /> Trips
+              </Link>
+              <Link to="/inbox" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>
+                <MessageSquare size={16} /> Messages
               </Link>
               <div className="my-1 border-t border-border" />
               {role === 'host' ? (
