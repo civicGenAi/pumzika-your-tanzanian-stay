@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BaobabLogo } from './BaobabLogo';
 import { SearchPill } from './SearchPill';
 import { Menu, Globe, User, LogOut, LayoutDashboard, Heart, Plane } from 'lucide-react';
@@ -11,6 +11,8 @@ export const Navbar = () => {
   const [session, setSession] = useState<any>(null);
   const [role, setRole] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isHostMode = location.pathname.startsWith('/host-dashboard');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -52,13 +54,15 @@ export const Navbar = () => {
         </Link>
 
         {/* Desktop search */}
-        <div className="hidden flex-1 justify-center md:flex">
-          <SearchPill variant="navbar" />
-        </div>
+        {!isHostMode && (
+          <div className="hidden flex-1 justify-center md:flex">
+            <SearchPill variant="navbar" />
+          </div>
+        )}
 
         {/* Right actions */}
         <div className="flex items-center gap-2">
-          {(!session || role !== 'host') && (
+          {(!session || role !== 'host') && !isHostMode && (
             <Link
               to="/become-host"
               className="hidden rounded-pill px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary md:block"
@@ -86,9 +90,11 @@ export const Navbar = () => {
       </div>
 
       {/* Mobile search bar */}
-      <div className="border-t border-border px-4 py-2 md:hidden">
-        <SearchPill variant="navbar" />
-      </div>
+      {!isHostMode && (
+        <div className="border-t border-border px-4 py-2 md:hidden">
+          <SearchPill variant="navbar" />
+        </div>
+      )}
 
       {/* Dropdown menu */}
       {menuOpen && (

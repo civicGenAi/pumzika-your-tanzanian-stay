@@ -9,6 +9,7 @@ import { HostEarnings } from '@/components/HostEarnings';
 import { HostReviews } from '@/components/HostReviews';
 import { HostCalendar } from '@/components/HostCalendar';
 import { HostSettings } from '@/components/HostSettings';
+import { ListingWizard } from '@/components/ListingWizard';
 import { StateFeedback } from '@/components/StateFeedback';
 
 const HostDashboard = () => {
@@ -36,6 +37,8 @@ const HostDashboard = () => {
                         <Routes>
                             <Route index element={<DashboardOverview />} />
                             <Route path="listings" element={<HostListings />} />
+                            <Route path="listings/new" element={<ListingWizard />} />
+                            <Route path="listings/:id/edit" element={<ListingWizard />} />
                             <Route path="bookings" element={<HostBookings />} />
                             <Route path="earnings" element={<HostEarnings />} />
                             <Route path="reviews" element={<HostReviews />} />

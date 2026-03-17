@@ -20,7 +20,7 @@ const footerLinks = {
 };
 
 export const Footer = () => (
-  <footer className="border-t border-border bg-card">
+  <footer className="mt-24 border-t border-border bg-card">
     <div className="container py-12 md:py-16">
       <div className="grid gap-8 md:grid-cols-4">
         <div>

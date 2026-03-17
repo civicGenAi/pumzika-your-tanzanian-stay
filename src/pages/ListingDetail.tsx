@@ -1,12 +1,33 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Star, MapPin, Heart, Share, Shield, Zap, Calendar } from 'lucide-react';
+import {
+    Star,
+    MapPin,
+    Heart,
+    Share,
+    Shield,
+    Zap,
+    Calendar,
+    Wifi,
+    Tv,
+    Wind,
+    Waves,
+    Car,
+    Coffee,
+    Utensils,
+    Lock,
+    X,
+    ChevronLeft,
+    ChevronRight,
+    Info
+} from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
+import { AnimatePresence, motion } from 'framer-motion';
 import { calculatePrice } from '@/lib/pricing';
 import { isDateRangeAvailable } from '@/lib/availability';
 import { useEffect, useState } from 'react';
@@ -25,6 +46,11 @@ const ListingDetail = () => {
     const [guests, setGuests] = useState(1);
     const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
     const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+    const [showPhotos, setShowPhotos] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const today = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0];
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -175,12 +201,46 @@ const ListingDetail = () => {
                         ))}
                         <Button
                             variant="outline"
-                            className="absolute bottom-4 right-4 bg-background/90 text-xs backdrop-blur-sm md:text-sm"
+                            className="absolute bottom-4 right-4 bg-background/90 text-xs backdrop-blur-sm md:text-sm shadow-sm"
                             size="sm"
+                            onClick={() => setShowPhotos(true)}
                         >
                             Show all photos
                         </Button>
                     </div>
+
+                    {/* Fullscreen Photo Gallery Overlay */}
+                    <AnimatePresence>
+                        {showPhotos && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="fixed inset-0 z-[100] bg-black p-4 md:p-10 flex flex-col"
+                            >
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute top-4 right-4 text-white hover:bg-white/20"
+                                    onClick={() => setShowPhotos(false)}
+                                >
+                                    <X size={24} />
+                                </Button>
+                                <div className="flex-1 overflow-y-auto mt-10">
+                                    <div className="max-w-4xl mx-auto space-y-4">
+                                        {images.map((img: string, i: number) => (
+                                            <img
+                                                key={i}
+                                                src={img}
+                                                alt={`Gallery view ${i + 1}`}
+                                                className="w-full rounded-lg object-cover"
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </section>
 
                 {/* Content Section */}
@@ -193,7 +253,7 @@ const ListingDetail = () => {
                                     Hosted by {listing.host?.full_name?.split(' ')[0] || 'Host'}
                                 </h2>
                                 <p className="mt-1 text-muted-foreground capitalize">
-                                    {listing.property_type} in {listing.region} · {listing.max_guests} guests · {listing.bedrooms} bedrooms · {listing.beds} beds · {listing.bathrooms} bath
+                                    {listing.category} in {listing.region} · {listing.guests} guests · {listing.bedrooms} bedrooms · {listing.beds || 0} beds · {listing.bathrooms} bath
                                 </p>
                             </div>
                             <div className="h-12 w-12 rounded-full bg-secondary overflow-hidden">
@@ -236,10 +296,22 @@ const ListingDetail = () => {
                         {/* Description */}
                         <div className="space-y-4">
                             <h3 className="font-display text-xl font-semibold">About this space</h3>
-                            <p className="leading-relaxed text-muted-foreground">
+                            <div className={cn(
+                                "relative leading-relaxed text-muted-foreground transition-all duration-300",
+                                !isExpanded && "max-h-24 overflow-hidden"
+                            )}>
                                 {listing.description || "Welcome to our beautiful stay in Tanzania. We provide everything you need for a comfortable and memorable experience."}
-                            </p>
-                            <Button variant="link" className="p-0 font-semibold underline">Show more</Button>
+                                {!isExpanded && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent" />
+                                )}
+                            </div>
+                            <Button
+                                variant="link"
+                                className="p-0 font-semibold underline text-[#1A6B4A]"
+                                onClick={() => setIsExpanded(!isExpanded)}
+                            >
+                                {isExpanded ? 'Show less' : 'Show more'}
+                            </Button>
                         </div>
 
                         <Separator className="my-8" />
@@ -248,12 +320,25 @@ const ListingDetail = () => {
                         <div className="space-y-4">
                             <h3 className="font-display text-xl font-semibold">What this place offers</h3>
                             <div className="grid grid-cols-2 gap-4">
-                                {(listing.amenities || []).slice(0, 10).map((item: string) => (
-                                    <div key={item} className="flex items-center gap-4 text-muted-foreground text-sm">
-                                        <div className="h-1.5 w-1.5 rounded-full bg-primary/60" />
-                                        <span>{item}</span>
-                                    </div>
-                                ))}
+                                {(listing.amenities || []).map((item: string) => {
+                                    const iconMap: any = {
+                                        wifi: Wifi,
+                                        tv: Tv,
+                                        ac: Wind,
+                                        pool: Waves,
+                                        parking: Car,
+                                        coffee: Coffee,
+                                        kitchen: Utensils,
+                                        security: Lock
+                                    };
+                                    const Icon = iconMap[item] || Info;
+                                    return (
+                                        <div key={item} className="flex items-center gap-4 text-muted-foreground text-sm">
+                                            <Icon size={18} className="text-[#1A6B4A]/70" />
+                                            <span className="capitalize">{item.replace('_', ' ')}</span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                             {(listing.amenities?.length || 0) > 10 && (
                                 <Button variant="outline" className="mt-4">Show all {listing.amenities.length} amenities</Button>
@@ -281,16 +366,23 @@ const ListingDetail = () => {
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Check-in</span>
                                         <input
                                             type="date"
-                                            className="bg-transparent border-none p-0 text-sm focus:ring-0"
-                                            onChange={(e) => setCheckIn(e.target.value ? new Date(e.target.value) : null)}
+                                            min={today}
+                                            className="bg-transparent border-none p-0 text-sm focus:ring-0 w-full"
+                                            onChange={(e) => {
+                                                const d = e.target.value ? new Date(e.target.value) : null;
+                                                setCheckIn(d);
+                                                if (checkOut && d && d >= checkOut) setCheckOut(null);
+                                            }}
                                         />
                                     </div>
                                     <div className="flex flex-col p-3 text-left transition-colors hover:bg-muted/50 cursor-pointer">
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Checkout</span>
                                         <input
                                             type="date"
-                                            className="bg-transparent border-none p-0 text-sm focus:ring-0"
+                                            min={checkIn ? new Date(new Date(checkIn).setDate(checkIn.getDate() + 1)).toISOString().split('T')[0] : tomorrow}
+                                            className="bg-transparent border-none p-0 text-sm focus:ring-0 w-full"
                                             onChange={(e) => setCheckOut(e.target.value ? new Date(e.target.value) : null)}
+                                            value={checkOut ? checkOut.toISOString().split('T')[0] : ''}
                                         />
                                     </div>
                                 </div>
@@ -301,7 +393,7 @@ const ListingDetail = () => {
                                         value={guests}
                                         onChange={(e) => setGuests(Number(e.target.value))}
                                     >
-                                        {[...Array(listing.max_guests)].map((_, i) => (
+                                        {[...Array(listing.guests || 1)].map((_, i) => (
                                             <option key={i} value={i + 1}>{i + 1} guest{i > 0 ? 's' : ''}</option>
                                         ))}
                                     </select>

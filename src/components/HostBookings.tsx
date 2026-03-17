@@ -27,7 +27,7 @@ export const HostBookings = () => {
                 .select(`
                     *,
                     listing:listings(title, region, destination),
-                    guest:users(full_name, avatar_url)
+                    guest:users!bookings_guest_id_fkey(full_name, avatar_url)
                 `)
                 .eq('host_id', session.user.id)
                 .order('created_at', { ascending: false });
