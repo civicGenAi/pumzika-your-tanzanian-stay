@@ -1,7 +1,7 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { MobileNav } from "@/components/MobileNav";
-import { Search, BookOpen, Home, Shield, lifeBuoy, ChevronRight } from "lucide-react";
+import { Search, BookOpen, Home, Shield, LifeBuoy, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 

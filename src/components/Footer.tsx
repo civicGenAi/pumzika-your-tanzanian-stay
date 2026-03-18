@@ -3,19 +3,19 @@ import { Link } from 'react-router-dom';
 
 const footerLinks = {
   'About Pumzika': [
-    { label: 'How it works', to: '/' },
-    { label: 'Newsroom', to: '/' },
-    { label: 'Careers', to: '/' },
+    { label: 'How it works', to: '/help' },
+    { label: 'Newsroom', to: '/help' },
+    { label: 'Careers', to: '/help' },
   ],
   Hosting: [
     { label: 'Become a Host', to: '/become-host' },
-    { label: 'Host resources', to: '/' },
-    { label: 'Community forum', to: '/' },
+    { label: 'Host resources', to: '/help' },
+    { label: 'Community forum', to: '/help' },
   ],
   Support: [
-    { label: 'Help center', to: '/' },
-    { label: 'Safety info', to: '/' },
-    { label: 'Cancellation', to: '/' },
+    { label: 'Help center', to: '/help' },
+    { label: 'Safety info', to: '/safety' },
+    { label: 'Cancellation', to: '/cancellation' },
   ],
 };
 
@@ -47,8 +47,8 @@ export const Footer = () => (
       <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border pt-6 text-xs text-muted-foreground md:flex-row">
         <p>© {new Date().getFullYear()} Pumzika. All rights reserved.</p>
         <div className="flex gap-4">
-          <span>Privacy</span>
-          <span>Terms</span>
+          <Link to="/privacy">Privacy</Link>
+          <Link to="/terms">Terms</Link>
           <span>Sitemap</span>
           <span>EN / SW</span>
           <span>TSh / USD</span>

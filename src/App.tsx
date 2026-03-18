@@ -17,6 +17,11 @@ import AllListings from "./pages/AllListings";
 import Profile from "./pages/Profile";
 import Checkout from "./pages/Checkout";
 import BookingSuccess from "./pages/BookingSuccess";
+import HelpCenter from "./pages/HelpCenter";
+import SafetyInfo from "./pages/SafetyInfo";
+import CancellationPolicy from "./pages/CancellationPolicy";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 import { AuthGuard } from "./components/AuthGuard";
 import { AuthDrawerProvider } from "./context/AuthDrawerContext";
@@ -46,6 +51,11 @@ const App = () => (
             <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
             <Route path="/checkout" element={<AuthGuard><Checkout /></AuthGuard>} />
             <Route path="/booking-confirmation" element={<AuthGuard><BookingSuccess /></AuthGuard>} />
+            <Route path="/help" element={<HelpCenter />} />
+            <Route path="/safety" element={<SafetyInfo />} />
+            <Route path="/cancellation" element={<CancellationPolicy />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
