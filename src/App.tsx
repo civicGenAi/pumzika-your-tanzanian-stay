@@ -19,34 +19,39 @@ import Checkout from "./pages/Checkout";
 import BookingSuccess from "./pages/BookingSuccess";
 import NotFound from "./pages/NotFound";
 import { AuthGuard } from "./components/AuthGuard";
+import { AuthDrawerProvider } from "./context/AuthDrawerContext";
+import { AuthDrawer } from "./components/AuthDrawer";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/explore" element={<AllListings />} />
-          <Route path="/search" element={<SearchResults />} />
-          <Route path="/listing/:id" element={<ListingDetail />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/become-host" element={<AuthGuard><BecomeHost /></AuthGuard>} />
-          <Route path="/host-dashboard/*" element={<AuthGuard><HostDashboard /></AuthGuard>} />
-          <Route path="/saved" element={<AuthGuard><Saved /></AuthGuard>} />
-          <Route path="/trips" element={<AuthGuard><Trips /></AuthGuard>} />
-          <Route path="/inbox" element={<AuthGuard><Inbox /></AuthGuard>} />
-          <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
-          <Route path="/checkout" element={<AuthGuard><Checkout /></AuthGuard>} />
-          <Route path="/booking-confirmation" element={<AuthGuard><BookingSuccess /></AuthGuard>} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthDrawerProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/explore" element={<AllListings />} />
+            <Route path="/search" element={<SearchResults />} />
+            <Route path="/listing/:id" element={<ListingDetail />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/become-host" element={<AuthGuard><BecomeHost /></AuthGuard>} />
+            <Route path="/host-dashboard/*" element={<AuthGuard><HostDashboard /></AuthGuard>} />
+            <Route path="/saved" element={<AuthGuard><Saved /></AuthGuard>} />
+            <Route path="/trips" element={<AuthGuard><Trips /></AuthGuard>} />
+            <Route path="/inbox" element={<AuthGuard><Inbox /></AuthGuard>} />
+            <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
+            <Route path="/checkout" element={<AuthGuard><Checkout /></AuthGuard>} />
+            <Route path="/booking-confirmation" element={<AuthGuard><BookingSuccess /></AuthGuard>} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <AuthDrawer />
+        </BrowserRouter>
+      </AuthDrawerProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

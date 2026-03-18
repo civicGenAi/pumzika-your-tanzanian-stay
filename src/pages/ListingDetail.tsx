@@ -32,10 +32,12 @@ import { calculatePrice } from '@/lib/pricing';
 import { isDateRangeAvailable } from '@/lib/availability';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useAuthDrawer } from '@/context/AuthDrawerContext';
 
 const ListingDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { openAuth } = useAuthDrawer();
     const [user, setUser] = useState<any>(null);
     const [listing, setListing] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -404,7 +406,13 @@ const ListingDetail = () => {
                                 <Button
                                     className="mt-4 w-full py-6 text-lg font-semibold bg-[#E8A838] text-[#1A6B4A] hover:bg-[#E8A838]/90"
                                     size="lg"
-                                    onClick={() => navigate('/login')}
+                                    onClick={() => {
+                                        if (window.innerWidth < 768) {
+                                            openAuth('login');
+                                        } else {
+                                            navigate('/login');
+                                        }
+                                    }}
                                 >
                                     Log in to book
                                 </Button>

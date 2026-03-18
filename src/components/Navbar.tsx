@@ -5,12 +5,11 @@ import { SearchPill } from './SearchPill';
 import { Menu, Globe, User, LogOut, LayoutDashboard, Heart, Plane, MessageSquare } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { AuthDrawer } from './AuthDrawer';
+import { useAuthDrawer } from '@/context/AuthDrawerContext';
 
 export const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [authDrawerOpen, setAuthDrawerOpen] = useState(false);
-  const [authInitialView, setAuthInitialView] = useState<'login' | 'register'>('login');
+  const { openAuth } = useAuthDrawer();
   const [session, setSession] = useState<any>(null);
   const [role, setRole] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -136,8 +135,7 @@ export const Navbar = () => {
             <>
               <button
                 onClick={() => {
-                  setAuthInitialView('login');
-                  setAuthDrawerOpen(true);
+                  openAuth('login');
                   setMenuOpen(false);
                 }}
                 className="w-full text-left px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-secondary md:hidden"
@@ -148,8 +146,7 @@ export const Navbar = () => {
 
               <button
                 onClick={() => {
-                  setAuthInitialView('register');
-                  setAuthDrawerOpen(true);
+                  openAuth('register');
                   setMenuOpen(false);
                 }}
                 className="w-full text-left px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary md:hidden"
@@ -165,13 +162,6 @@ export const Navbar = () => {
           )}
         </div>
       )}
-
-      {/* Auth Drawer for Mobile */}
-      <AuthDrawer
-        isOpen={authDrawerOpen}
-        onClose={() => setAuthDrawerOpen(false)}
-        initialView={authInitialView}
-      />
     </header>
   );
 };

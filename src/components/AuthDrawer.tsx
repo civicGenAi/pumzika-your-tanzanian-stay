@@ -1,23 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Lock, User, Eye, EyeOff, ShieldCheck, Phone, Users, ChevronLeft } from 'lucide-react';
+import { X, Mail, Lock, User, Eye, EyeOff, ShieldCheck, Phone, Users } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useAuthDrawer } from '@/context/AuthDrawerContext';
 
-interface AuthDrawerProps {
-    isOpen: boolean;
-    onClose: () => void;
-    initialView?: 'login' | 'register';
-}
-
-export const AuthDrawer = ({ isOpen, onClose, initialView = 'login' }: AuthDrawerProps) => {
-    const [view, setView] = useState<'login' | 'register'>(initialView);
+export const AuthDrawer = () => {
+    const { isOpen, view, closeAuth } = useAuthDrawer();
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [activeView, setActiveView] = useState<'login' | 'register'>('login');
+
+    // Sync activeView with context view when it opens
+    useEffect(() => {
+        if (isOpen) {
+            setActiveView(view);
+        }
+    }, [isOpen, view]);
 
     // Form states
     const [email, setEmail] = useState('');
@@ -33,8 +36,8 @@ export const AuthDrawer = ({ isOpen, onClose, initialView = 'login' }: AuthDrawe
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) throw error;
             toast.success('Welcome back!');
-            onClose();
-            window.location.reload(); // Refresh to update session
+            closeAuth();
+            window.location.reload();
         } catch (error: any) {
             toast.error(error.message || 'Failed to login');
         } finally {
@@ -57,7 +60,7 @@ export const AuthDrawer = ({ isOpen, onClose, initialView = 'login' }: AuthDrawe
             });
             if (error) throw error;
             toast.success('Registration successful! Please check your email.');
-            setView('login');
+            setActiveView('login');
         } catch (error: any) {
             toast.error(error.message || 'Failed to create account');
         } finally {
@@ -69,32 +72,35 @@ export const AuthDrawer = ({ isOpen, onClose, initialView = 'login' }: AuthDrawe
         <AnimatePresence>
             {isOpen && (
                 <>
+                    {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        onClick={onClose}
-                        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm md:hidden"
+                        onClick={closeAuth}
+                        className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm md:hidden"
                     />
+                    {/* Drawer */}
                     <motion.div
                         initial={{ y: '100%' }}
                         animate={{ y: 0 }}
                         exit={{ y: '100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed inset-x-0 bottom-0 z-[101] rounded-t-[32px] bg-card p-6 shadow-2xl md:hidden max-h-[95vh] overflow-y-auto"
+                        className="fixed inset-x-0 bottom-0 z-[9999] flex flex-col rounded-t-[32px] bg-card p-6 pb-12 shadow-2xl md:hidden max-h-[90vh] overflow-y-auto outline-none"
+                        style={{ top: 'auto' }}
                     >
-                        <div className="mx-auto mb-6 h-1.5 w-12 rounded-full bg-border" />
+                        <div className="mx-auto mb-6 h-1.5 w-12 shrink-0 rounded-full bg-border" />
 
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-2xl font-bold tracking-tight text-primary">
-                                {view === 'login' ? 'Welcome Back' : 'Join Pumzika'}
+                                {activeView === 'login' ? 'Welcome Back' : 'Join Pumzika'}
                             </h2>
-                            <button onClick={onClose} className="p-2 rounded-full bg-slate-100">
+                            <button onClick={closeAuth} className="p-2 rounded-full bg-slate-100">
                                 <X size={20} />
                             </button>
                         </div>
 
-                        {view === 'login' ? (
+                        {activeView === 'login' ? (
                             <form onSubmit={handleLogin} className="space-y-5">
                                 <div className="space-y-2">
                                     <Label htmlFor="drawer-email">Email</Label>
@@ -133,13 +139,13 @@ export const AuthDrawer = ({ isOpen, onClose, initialView = 'login' }: AuthDrawe
                                     </div>
                                 </div>
                                 <Button type="submit" className="w-full h-14 text-lg font-bold" disabled={isLoading}>
-                                    {isLoading ? 'Wait...' : 'Log In'}
+                                    {isLoading ? 'Processing...' : 'Log In'}
                                 </Button>
                                 <p className="text-center text-sm text-muted-foreground">
                                     Don't have an account?{' '}
                                     <button
                                         type="button"
-                                        onClick={() => setView('register')}
+                                        onClick={() => setActiveView('register')}
                                         className="font-bold text-primary underline"
                                     >
                                         Sign up
@@ -180,7 +186,7 @@ export const AuthDrawer = ({ isOpen, onClose, initialView = 'login' }: AuthDrawe
                                     Already have an account?{' '}
                                     <button
                                         type="button"
-                                        onClick={() => setView('login')}
+                                        onClick={() => setActiveView('login')}
                                         className="font-bold text-primary underline"
                                     >
                                         Log in

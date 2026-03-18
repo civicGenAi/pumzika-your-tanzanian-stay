@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Star, Heart, Zap, MapPin, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useAuthDrawer } from '@/context/AuthDrawerContext';
 
 export interface ListingData {
   id: string;
@@ -28,6 +29,7 @@ interface ListingCardProps {
 }
 
 export const ListingCard = ({ listing, index = 0, onWishlistToggle }: ListingCardProps) => {
+  const { openAuth } = useAuthDrawer();
   const [saved, setSaved] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -55,7 +57,11 @@ export const ListingCard = ({ listing, index = 0, onWishlistToggle }: ListingCar
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      toast.error('Please login to save listings');
+      if (window.innerWidth < 768) {
+        openAuth('login');
+      } else {
+        toast.error('Please login to save listings');
+      }
       return;
     }
 
