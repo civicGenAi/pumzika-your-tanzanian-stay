@@ -26,7 +26,6 @@ import { fetchDestinationStats, DestinationStat } from '@/lib/discovery';
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeFilter = searchParams.get('category') || 'All';
   const where = searchParams.get('location') || '';
   const when = searchParams.get('dates') || '';
   const who = searchParams.get('guests') || '';
@@ -36,24 +35,6 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [dynamicDestinations, setDynamicDestinations] = useState<DestinationStat[]>([]);
 
-  const updateFilter = (category: string) => {
-    const newParams = new URLSearchParams(searchParams);
-
-    // Check if category is a destination
-    const isDest = ['Arusha', 'Zanzibar', 'Kilimanjaro', 'Dodoma'].includes(category);
-
-    if (category === 'All') {
-      newParams.delete('category');
-      newParams.delete('location');
-    } else if (isDest) {
-      newParams.set('location', category);
-      newParams.delete('category');
-    } else {
-      newParams.set('category', category);
-      newParams.delete('location');
-    }
-    setSearchParams(newParams);
-  };
 
   const updateSearch = (key: string, value: string) => {
     const newParams = new URLSearchParams(searchParams);
@@ -65,7 +46,7 @@ const Index = () => {
   useEffect(() => {
     fetchListings();
     loadDestinations();
-  }, [activeFilter, where]); // Re-fetch on filter change
+  }, [where]); // Re-fetch on location change
 
   const loadDestinations = async () => {
     const stats = await fetchDestinationStats();
@@ -84,9 +65,6 @@ const Index = () => {
         `)
         .eq('status', 'published');
 
-      if (activeFilter !== 'All') {
-        query = query.contains('amenities', [activeFilter]);
-      }
 
       if (where) {
         query = query.ilike('destination', `%${where}%`);
@@ -150,34 +128,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* STICKY FILTER BAR - INTERNATIONAL STANDARD */}
-      <section className="sticky top-20 md:top-24 z-30 border-b border-border bg-card/95 backdrop-blur-md shadow-sm">
-        <div className="container flex items-center gap-4 py-3 md:py-4">
-          <div className="scrollbar-hide flex flex-1 gap-3 overflow-x-auto">
-            {filterChips.map((chip) => (
-              <button
-                key={chip.label}
-                onClick={() => updateFilter(chip.label)}
-                className={`shrink-0 flex flex-col items-center gap-2 px-3 py-1.5 transition-all group ${activeFilter === chip.label
-                  ? 'border-b-2 border-primary'
-                  : 'opacity-60 hover:opacity-100'
-                  }`}
-              >
-                <span className="text-lg transition-transform group-hover:scale-110">{chip.emoji}</span>
-                <span className={`text-[11px] font-bold uppercase tracking-wider ${activeFilter === chip.label ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {chip.label}
-                </span>
-              </button>
-            ))}
-          </div>
-          <button className="hidden md:flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-bold text-foreground transition-all hover:bg-secondary hover:shadow-sm">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M14 3H2L6.5 8V13H9.5V8L14 3Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Filters
-          </button>
-        </div>
-      </section>
 
       {/* DISCOVER SECTION */}
       <section className="container py-10 md:py-12">

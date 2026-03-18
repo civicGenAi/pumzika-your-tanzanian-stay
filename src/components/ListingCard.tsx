@@ -128,22 +128,14 @@ export const ListingCard = ({ listing, index = 0, onWishlistToggle }: ListingCar
           )}
         </button>
 
-        {/* Badges */}
-        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-          {listing.isSuperhost && (
+        {/* Superhost Badge */}
+        {listing.isSuperhost && (
+          <div className="absolute left-3 top-3">
             <span className="rounded-pill bg-card/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-foreground shadow-sm backdrop-blur-sm">
               Superhost
             </span>
-          )}
-          {listing.badges?.map((badge) => (
-            <span
-              key={badge}
-              className="rounded-pill bg-primary/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-primary-foreground backdrop-blur-sm"
-            >
-              {badge}
-            </span>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Info */}
