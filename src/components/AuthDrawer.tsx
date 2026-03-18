@@ -33,11 +33,30 @@ export const AuthDrawer = () => {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) throw error;
+
             toast.success('Welcome back!');
-            closeAuth();
-            window.location.reload();
+
+            // Check role for redirection
+            if (data.user) {
+                const { data: profile } = await supabase
+                    .from('users')
+                    .select('role')
+                    .eq('id', data.user.id)
+                    .single();
+
+                closeAuth();
+
+                if (profile?.role === 'admin') {
+                    window.location.href = '/admin';
+                } else {
+                    window.location.reload();
+                }
+            } else {
+                closeAuth();
+                window.location.reload();
+            }
         } catch (error: any) {
             toast.error(error.message || 'Failed to login');
         } finally {

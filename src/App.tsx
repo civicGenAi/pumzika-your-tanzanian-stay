@@ -26,6 +26,7 @@ import NotFound from "./pages/NotFound";
 import { AuthGuard } from "./components/AuthGuard";
 import { AuthDrawerProvider } from "./context/AuthDrawerContext";
 import { AuthDrawer } from "./components/AuthDrawer";
+import AdminLayout from "./pages/AdminLayout";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/cancellation" element={<CancellationPolicy />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/admin/*" element={<AdminLayout />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

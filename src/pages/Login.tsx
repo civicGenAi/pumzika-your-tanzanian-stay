@@ -38,7 +38,9 @@ const Login = () => {
                 .eq('id', data.user.id)
                 .single();
 
-            if (profile?.role === 'host') {
+            if (profile?.role === 'admin') {
+                navigate('/admin');
+            } else if (profile?.role === 'host') {
                 navigate('/host-dashboard');
             } else {
                 navigate('/');
