@@ -13,6 +13,7 @@ import HostDashboard from "./pages/HostDashboard";
 import Saved from "./pages/Saved";
 import Trips from "./pages/Trips";
 import Inbox from "./pages/Inbox";
+import AllListings from "./pages/AllListings";
 import Profile from "./pages/Profile";
 import Checkout from "./pages/Checkout";
 import BookingSuccess from "./pages/BookingSuccess";
@@ -29,6 +30,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/explore" element={<AllListings />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/listing/:id" element={<ListingDetail />} />
           <Route path="/login" element={<Login />} />

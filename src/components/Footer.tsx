@@ -23,9 +23,9 @@ export const Footer = () => (
   <footer className="mt-24 border-t border-border bg-card">
     <div className="container py-12 md:py-16">
       <div className="grid gap-8 md:grid-cols-4">
-        <div>
-          <BaobabLogo />
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        <div className="md:col-span-1">
+          <BaobabLogo className="scale-125 origin-left" />
+          <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
             Your home across Tanzania. Discover curated stays from Zanzibar to Kilimanjaro.
           </p>
         </div>

@@ -115,127 +115,131 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Navbar />
 
-      {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-background to-secondary/40 px-4 pb-12 pt-10 md:pb-20 md:pt-16">
-        {/* Bokeh */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="animate-bokeh absolute left-[10%] top-[20%] h-32 w-32 rounded-full bg-primary/10" />
-          <div className="animate-bokeh-delayed absolute right-[15%] top-[30%] h-24 w-24 rounded-full bg-accent/15" />
-          <div className="animate-bokeh-slow absolute bottom-[20%] left-[50%] h-20 w-20 rounded-full bg-primary/8" />
-        </div>
-
+      {/* MOBILE HERO ONLY */}
+      <section className="md:hidden relative overflow-hidden bg-gradient-to-b from-background to-slate-50 px-4 pt-4 pb-0">
         <div className="container relative">
           <motion.div
             variants={stagger}
             initial="hidden"
             animate="show"
-            className="mx-auto max-w-3xl text-center"
+            className="text-left"
           >
             <motion.h1
               variants={fadeUp}
-              className="font-display text-3xl font-bold tracking-tight text-foreground text-balance md:text-6xl"
-              style={{ letterSpacing: '-0.02em' }}
+              className="font-display text-3xl font-bold tracking-tight text-[#1A6B4A]"
             >
-              Find your perfect stay in Tanzania
+              Find your perfect stay
             </motion.h1>
             <motion.p
               variants={fadeUp}
-              className="mx-auto mt-4 max-w-lg text-base text-muted-foreground md:text-lg"
+              className="mt-2 text-sm text-muted-foreground"
             >
-              From Zanzibar's shores to Kilimanjaro's foothills
+              Discover curated homes across Tanzania
             </motion.p>
-            <motion.div variants={fadeUp} className="mx-auto mt-8 flex justify-center">
-              <SearchPill
-                variant="hero"
-                where={where}
-                setWhere={(val) => updateSearch('location', val)}
-                when={when}
-                setWhen={(val) => updateSearch('dates', val)}
-                who={who}
-                setWho={(val) => updateSearch('guests', val)}
-              />
-            </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* FILTER CHIPS */}
-      <section className="border-b border-border bg-card">
-        <div className="scrollbar-hide flex gap-2 overflow-x-auto px-4 py-3 md:container md:justify-center md:gap-3 md:py-4">
-          {filterChips.map((chip) => (
-            <button
-              key={chip.label}
-              onClick={() => updateFilter(chip.label)}
-              className={`shrink-0 rounded-pill px-4 py-2 text-sm font-medium transition-all ${activeFilter === chip.label
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'border border-border bg-card text-foreground hover:bg-secondary'
-                }`}
-            >
-              {chip.emoji && <span className="mr-1.5">{chip.emoji}</span>}
-              {chip.label}
-            </button>
-          ))}
+      {/* STICKY FILTER BAR - INTERNATIONAL STANDARD */}
+      <section className="sticky top-20 md:top-24 z-30 border-b border-border bg-card/95 backdrop-blur-md shadow-sm">
+        <div className="container flex items-center gap-4 py-3 md:py-4">
+          <div className="scrollbar-hide flex flex-1 gap-3 overflow-x-auto">
+            {filterChips.map((chip) => (
+              <button
+                key={chip.label}
+                onClick={() => updateFilter(chip.label)}
+                className={`shrink-0 flex flex-col items-center gap-2 px-3 py-1.5 transition-all group ${activeFilter === chip.label
+                  ? 'border-b-2 border-primary'
+                  : 'opacity-60 hover:opacity-100'
+                  }`}
+              >
+                <span className="text-lg transition-transform group-hover:scale-110">{chip.emoji}</span>
+                <span className={`text-[11px] font-bold uppercase tracking-wider ${activeFilter === chip.label ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {chip.label}
+                </span>
+              </button>
+            ))}
+          </div>
+          <button className="hidden md:flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-bold text-foreground transition-all hover:bg-secondary hover:shadow-sm">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14 3H2L6.5 8V13H9.5V8L14 3Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Filters
+          </button>
         </div>
       </section>
 
-      {/* POPULAR STAYS */}
-      <section className="container py-10 md:py-16">
-        <motion.h2
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="font-display text-2xl font-semibold text-foreground md:text-3xl"
-        >
-          Popular stays
-        </motion.h2>
+      {/* DISCOVER SECTION */}
+      <section className="container py-10 md:py-12">
+        <div className="flex items-end justify-between mb-8">
+          <div>
+            <motion.h2
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="font-display text-2xl font-bold text-[#1A6B4A] md:text-3xl"
+            >
+              Discover Tanzanian Heritage
+            </motion.h2>
+            <p className="text-muted-foreground mt-2 font-medium">Top-rated stays vetted for quality and comfort</p>
+          </div>
+          <Link to="/explore" className="hidden md:flex items-center gap-2 text-sm font-bold text-primary hover:underline transition-all">
+            Show all {listings.length} stays <ArrowRight size={16} />
+          </Link>
+        </div>
 
-        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+        <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
           {isLoading ? (
             Array(8).fill(0).map((_, i) => (
-              <div key={i} className="space-y-3">
-                <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
-                <Skeleton className="h-4 w-3/4" />
+              <div key={i} className="space-y-4">
+                <Skeleton className="aspect-[1/1] w-full rounded-[24px]" />
+                <Skeleton className="h-5 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
               </div>
             ))
           ) : (
             displayed.map((listing, i) => (
-              <Link to={`/listing/${listing.id}`} key={listing.id}>
+              <Link to={`/listing/${listing.id}`} key={listing.id} className="group">
                 <ListingCard listing={listing} index={i} />
               </Link>
             ))
           )}
         </div>
 
-        {!showAll && listings.length > 8 && (
-          <div className="mt-8 text-center">
-            <button
-              onClick={() => setShowAll(true)}
-              className="rounded-pill border border-foreground px-8 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background"
+        {listings.length > 8 && (
+          <div className="mt-12 text-center">
+            <Link
+              to="/explore"
+              className="inline-flex items-center gap-2 rounded-full bg-[#1A6B4A] px-10 py-4 font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
             >
-              Show more
-            </button>
+              Explore all stays
+            </Link>
           </div>
         )}
 
         {!isLoading && listings.length === 0 && (
-          <div className="py-16 text-center">
-            <p className="text-lg text-muted-foreground">No stays found in this category. Try a different filter.</p>
+          <div className="py-24 text-center bg-slate-50 rounded-[40px] border-2 border-dashed border-border">
+            <Compass size={48} className="mx-auto text-muted-foreground mb-4" />
+            <p className="text-lg font-bold text-[#1A6B4A]">No stays found</p>
+            <p className="text-muted-foreground max-w-xs mx-auto mt-2">Try a different destination or filter to find your perfect stay.</p>
           </div>
         )}
       </section>
 
-      {/* EXPLORE DESTINATIONS */}
-      <section className="container py-10 md:py-16">
-        <motion.h2
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="font-display text-2xl font-semibold text-foreground md:text-3xl"
-        >
-          Explore Tanzania's finest
-        </motion.h2>
-        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+      {/* TOP DESTINATIONS */}
+      <section className="container py-12 md:py-20 bg-slate-50/50 rounded-[48px] my-10 border border-slate-100">
+        <div className="text-center mb-12">
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-display text-3xl font-bold text-[#1A6B4A] md:text-4xl"
+          >
+            Experience the Heart of Tanzania
+          </motion.h2>
+          <p className="text-muted-foreground mt-3 max-w-lg mx-auto">From the spice islands of Zanzibar to the wild plains of Serengeti</p>
+        </div>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-8">
           {destinations.map((dest, i) => (
             <DestinationCard key={dest.slug} {...dest} index={i} />
           ))}

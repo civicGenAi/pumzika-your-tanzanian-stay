@@ -46,52 +46,52 @@ export const Navbar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-xl">
-      <div className="container flex h-16 items-center justify-between gap-4 md:h-20">
+    <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-xl transition-all">
+      <div className="container flex h-20 items-center justify-between gap-4 md:h-24">
         {/* Logo */}
-        <Link to="/" className="shrink-0">
+        <Link to="/" className="shrink-0 scale-90 md:scale-100 transition-transform active:scale-95">
           <BaobabLogo />
         </Link>
 
         {/* Desktop search */}
         {!isHostMode && (
-          <div className="hidden flex-1 justify-center md:flex">
+          <div className="hidden flex-1 justify-center max-w-2xl px-8 md:flex">
             <SearchPill variant="navbar" />
           </div>
         )}
 
         {/* Right actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {(!session || role !== 'host') && !isHostMode && (
             <Link
               to="/become-host"
-              className="hidden rounded-pill px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary md:block"
+              className="hidden rounded-full border border-border px-6 py-2.5 text-sm font-bold text-foreground transition-all hover:bg-secondary hover:shadow-sm md:block"
             >
               Become a Host
             </Link>
           )}
-          <button className="hidden rounded-full p-2 text-foreground transition-colors hover:bg-secondary md:flex">
-            <Globe size={18} strokeWidth={1.5} />
+          <button className="hidden rounded-full p-2.5 text-foreground transition-colors hover:bg-secondary md:flex">
+            <Globe size={20} strokeWidth={1.5} />
           </button>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center gap-2 rounded-pill border border-border bg-card px-3 py-2 shadow-sm transition-shadow hover:shadow-card"
+            className="flex items-center gap-3 rounded-full border border-border bg-card pr-2 pl-4 py-2 shadow-sm transition-all hover:shadow-md active:scale-95"
           >
-            <Menu size={16} strokeWidth={1.5} className="text-foreground" />
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary overflow-hidden">
+            <Menu size={18} strokeWidth={1.5} className="text-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 overflow-hidden border border-border shadow-inner">
               {session?.user?.user_metadata?.avatar_url ? (
                 <img src={session.user.user_metadata.avatar_url} alt="Profile" className="h-full w-full object-cover" />
               ) : (
-                <img src="/pumzika-icon-alt.png" alt="Profile" className="h-full w-full object-cover" />
+                <img src="/pumzika-icon-alt.png" alt="Profile" className="h-full w-full object-cover scale-110" />
               )}
             </div>
           </button>
         </div>
       </div>
 
-      {/* Mobile search bar */}
-      {!isHostMode && (
-        <div className="border-t border-border px-4 py-2 md:hidden">
+      {/* Mobile search bar - Only on Home page to avoid clutter */}
+      {!isHostMode && location.pathname === '/' && (
+        <div className="border-t border-border px-4 py-4 md:hidden bg-card animate-in slide-in-from-top-2 duration-300">
           <SearchPill variant="navbar" />
         </div>
       )}
