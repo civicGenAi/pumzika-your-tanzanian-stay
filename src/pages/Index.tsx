@@ -22,6 +22,8 @@ const fadeUp = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const } },
 };
 
+import { fetchDestinationStats, DestinationStat } from '@/lib/discovery';
+
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeFilter = searchParams.get('category') || 'All';
@@ -32,13 +34,23 @@ const Index = () => {
   const [showAll, setShowAll] = useState(false);
   const [listings, setListings] = useState<ListingData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [dynamicDestinations, setDynamicDestinations] = useState<DestinationStat[]>([]);
 
   const updateFilter = (category: string) => {
     const newParams = new URLSearchParams(searchParams);
-    if (category === 'All' || category === activeFilter) {
+
+    // Check if category is a destination
+    const isDest = ['Arusha', 'Zanzibar', 'Kilimanjaro', 'Dodoma'].includes(category);
+
+    if (category === 'All') {
+      newParams.delete('category');
+      newParams.delete('location');
+    } else if (isDest) {
+      newParams.set('location', category);
       newParams.delete('category');
     } else {
       newParams.set('category', category);
+      newParams.delete('location');
     }
     setSearchParams(newParams);
   };
@@ -52,7 +64,13 @@ const Index = () => {
 
   useEffect(() => {
     fetchListings();
+    loadDestinations();
   }, [activeFilter, where]); // Re-fetch on filter change
+
+  const loadDestinations = async () => {
+    const stats = await fetchDestinationStats();
+    setDynamicDestinations(stats);
+  };
 
   const fetchListings = async () => {
     setIsLoading(true);
@@ -66,23 +84,15 @@ const Index = () => {
         `)
         .eq('status', 'published');
 
-      // Simple filtering (can expand later)
       if (activeFilter !== 'All') {
-        const isDestination = destinations.some(d => d.name === activeFilter);
-        if (isDestination) {
-          query = query.eq('destination', activeFilter.toLowerCase());
-        } else {
-          // Check amenities
-          query = query.contains('amenities', [activeFilter]);
-        }
+        query = query.contains('amenities', [activeFilter]);
       }
 
       if (where) {
-        query = query.ilike('region', `%${where}%`);
+        query = query.ilike('destination', `%${where}%`);
       }
 
       const { data, error } = await query;
-
       if (error) throw error;
 
       const formattedData: ListingData[] = (data || []).map(item => ({
@@ -240,8 +250,16 @@ const Index = () => {
           <p className="text-muted-foreground mt-3 max-w-lg mx-auto">From the spice islands of Zanzibar to the wild plains of Serengeti</p>
         </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-8">
-          {destinations.map((dest, i) => (
-            <DestinationCard key={dest.slug} {...dest} index={i} />
+          {dynamicDestinations.map((dest, i) => (
+            <Link key={dest.slug} to={`/explore?location=${dest.slug}`}>
+              <DestinationCard
+                name={dest.name}
+                count={dest.count}
+                image={dest.image}
+                slug={dest.slug}
+                index={i}
+              />
+            </Link>
           ))}
         </div>
       </section>

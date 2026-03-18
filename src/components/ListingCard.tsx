@@ -44,7 +44,7 @@ export const ListingCard = ({ listing, index = 0, onWishlistToggle }: ListingCar
       .select('id')
       .eq('user_id', session.user.id)
       .eq('listing_id', listing.id)
-      .single();
+      .maybeSingle();
 
     if (data) setSaved(true);
   };

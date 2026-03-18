@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
@@ -8,21 +9,63 @@ import { supabase } from '@/lib/supabase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Filter, X, SlidersHorizontal, ChevronDown, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { fetchAmenityStats } from '@/lib/discovery';
 
 const AllListings = () => {
+    const [searchParams] = useSearchParams();
     const [listings, setListings] = useState<ListingData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [amenityStats, setAmenityStats] = useState<Record<string, number>>({});
+    const [destinationStats, setDestinationStats] = useState<Record<string, number>>({});
 
     // Filters state
-    const [activeCategory, setActiveCategory] = useState('All');
+    const [selectedAmenities, setSelectedAmenities] = useState<string[]>(
+        searchParams.get('category') ? [searchParams.get('category') as string] : []
+    );
     const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000000]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedDestinations, setSelectedDestinations] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+    const [selectedDestinations, setSelectedDestinations] = useState<string[]>(
+        searchParams.get('location') ? [searchParams.get('location') as string] : []
+    );
+
+    useEffect(() => {
+        // Source of truth: URL params
+        const urlLocation = searchParams.get('location');
+        const urlCategory = searchParams.get('category');
+        const urlQuery = searchParams.get('q');
+
+        // Update destinations if provided, otherwise clear if was set from URL
+        if (urlLocation) {
+            setSelectedDestinations([urlLocation]);
+        } else if (searchParams.has('location') === false && selectedDestinations.length === 1 && destinations.some(d => d.name === selectedDestinations[0])) {
+            // Only clear if it was an automated set, but let user keep their UI choices for now
+            // Actually, let's keep it simple: sync URL to state.
+        }
+
+        // Simplified sync: URL -> State (Initial load or explicit navigation)
+        if (urlLocation) setSelectedDestinations([urlLocation]);
+        if (urlCategory) setSelectedAmenities([urlCategory]);
+        if (urlQuery) setSearchQuery(urlQuery);
+    }, [searchParams]);
 
     useEffect(() => {
         fetchListings();
-    }, [activeCategory, priceRange, searchQuery, selectedDestinations]);
+        loadStats();
+    }, [selectedAmenities, priceRange, searchQuery, selectedDestinations]);
+
+    const loadStats = async () => {
+        const aStats = await fetchAmenityStats();
+        setAmenityStats(aStats);
+
+        const { data } = await supabase.from('listings').select('destination').eq('status', 'published');
+        const dStats: Record<string, number> = {};
+        data?.forEach(l => {
+            const d = l.destination.charAt(0).toUpperCase() + l.destination.slice(1);
+            dStats[d] = (dStats[d] || 0) + 1;
+        });
+        setDestinationStats(dStats);
+    };
 
     const fetchListings = async () => {
         setIsLoading(true);
@@ -36,21 +79,19 @@ const AllListings = () => {
         `)
                 .eq('status', 'published');
 
-            if (activeCategory !== 'All') {
-                const isDestination = destinations.some(d => d.name === activeCategory);
-                if (isDestination) {
-                    query = query.eq('destination', activeCategory.toLowerCase());
-                } else {
-                    query = query.contains('amenities', [activeCategory]);
-                }
-            }
-
+            // Destinations from sidebar + search query
             if (selectedDestinations.length > 0) {
                 query = query.in('destination', selectedDestinations.map(d => d.toLowerCase()));
             }
 
+            // Amenities filter
+            if (selectedAmenities.length > 0) {
+                // Filter listings that have ALL selected amenities
+                query = query.contains('amenities', selectedAmenities);
+            }
+
             if (searchQuery) {
-                query = query.ilike('title', `%${searchQuery}%`);
+                query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,region.ilike.%${searchQuery}%`);
             }
 
             query = query.gte('base_price', priceRange[0]).lte('base_price', priceRange[1]);
@@ -140,7 +181,34 @@ const AllListings = () => {
                                 <ChevronDown className="absolute text-white opacity-0 peer-checked:opacity-100 transition-opacity" size={14} />
                             </div>
                             <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">{dest.name}</span>
-                            <span className="ml-auto text-[10px] font-bold text-muted-foreground/50">{dest.count}</span>
+                            <span className="ml-auto text-[10px] font-bold text-muted-foreground/50">{destinationStats[dest.name] || 0}</span>
+                        </label>
+                    ))}
+                </div>
+            </div>
+
+            <div>
+                <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-4">Amenities</h3>
+                <div className="grid gap-2 max-h-60 overflow-y-auto pr-2 scrollbar-thin">
+                    {filterChips.filter(c => c.label !== 'All' && !['Arusha', 'Zanzibar', 'Kilimanjaro', 'Dodoma'].includes(c.label)).map((chip) => (
+                        <label key={chip.label} className="flex items-center gap-3 cursor-pointer group">
+                            <div className="relative flex items-center justify-center">
+                                <input
+                                    type="checkbox"
+                                    className="peer h-5 w-5 rounded-md border-2 border-border transition-all checked:bg-primary checked:border-primary appearance-none cursor-pointer"
+                                    checked={selectedAmenities.includes(chip.label)}
+                                    onChange={() => {
+                                        if (selectedAmenities.includes(chip.label)) {
+                                            setSelectedAmenities(selectedAmenities.filter(a => a !== chip.label));
+                                        } else {
+                                            setSelectedAmenities([...selectedAmenities, chip.label]);
+                                        }
+                                    }}
+                                />
+                                <ChevronDown className="absolute text-white opacity-0 peer-checked:opacity-100 transition-opacity" size={14} />
+                            </div>
+                            <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">{chip.label}</span>
+                            <span className="ml-auto text-[10px] font-bold text-muted-foreground/50">{amenityStats[chip.label] || 0}</span>
                         </label>
                     ))}
                 </div>
@@ -178,8 +246,28 @@ const AllListings = () => {
                             {filterChips.map((chip) => (
                                 <button
                                     key={chip.label}
-                                    onClick={() => setActiveCategory(chip.label)}
-                                    className={`shrink-0 rounded-full px-5 py-2 text-[13px] font-bold transition-all border ${activeCategory === chip.label
+                                    onClick={() => {
+                                        const isDest = ['Arusha', 'Zanzibar', 'Kilimanjaro', 'Dodoma'].includes(chip.label);
+                                        if (chip.label === 'All') {
+                                            setSelectedAmenities([]);
+                                            setSelectedDestinations([]);
+                                        } else if (isDest) {
+                                            if (selectedDestinations.includes(chip.label)) {
+                                                setSelectedDestinations(selectedDestinations.filter(d => d !== chip.label));
+                                            } else {
+                                                setSelectedDestinations([...selectedDestinations, chip.label]);
+                                            }
+                                        } else {
+                                            if (selectedAmenities.includes(chip.label)) {
+                                                setSelectedAmenities(selectedAmenities.filter(a => a !== chip.label));
+                                            } else {
+                                                setSelectedAmenities([...selectedAmenities, chip.label]);
+                                            }
+                                        }
+                                    }}
+                                    className={`shrink-0 rounded-full px-5 py-2 text-[13px] font-bold transition-all border ${(chip.label === 'All' && selectedAmenities.length === 0 && selectedDestinations.length === 0) ||
+                                        selectedAmenities.includes(chip.label) ||
+                                        selectedDestinations.includes(chip.label)
                                         ? 'bg-primary border-primary text-white shadow-md'
                                         : 'border-border bg-card text-muted-foreground hover:border-primary hover:text-primary'
                                         }`}

@@ -47,7 +47,7 @@ export const Navbar = () => {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-xl transition-all">
-      <div className="container flex h-20 items-center justify-between gap-4 md:h-24">
+      <div className="container flex h-24 items-center justify-between gap-4 md:h-32">
         {/* Logo */}
         <Link to="/" className="shrink-0 scale-90 md:scale-100 transition-transform active:scale-95">
           <BaobabLogo />
