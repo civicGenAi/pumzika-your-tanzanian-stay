@@ -5,9 +5,12 @@ import { SearchPill } from './SearchPill';
 import { Menu, Globe, User, LogOut, LayoutDashboard, Heart, Plane, MessageSquare } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { AuthDrawer } from './AuthDrawer';
 
 export const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [authDrawerOpen, setAuthDrawerOpen] = useState(false);
+  const [authInitialView, setAuthInitialView] = useState<'login' | 'register'>('login');
   const [session, setSession] = useState<any>(null);
   const [role, setRole] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -89,12 +92,6 @@ export const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile search bar - Only on Home page to avoid clutter */}
-      {!isHostMode && location.pathname === '/' && (
-        <div className="border-t border-border px-4 py-4 md:hidden bg-card animate-in slide-in-from-top-2 duration-300">
-          <SearchPill variant="navbar" />
-        </div>
-      )}
 
       {/* Dropdown menu */}
       {menuOpen && (
@@ -137,8 +134,30 @@ export const Navbar = () => {
             </>
           ) : (
             <>
-              <Link to="/login" className="block px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>Log in</Link>
-              <Link to="/register" className="block px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>Sign up</Link>
+              <button
+                onClick={() => {
+                  setAuthInitialView('login');
+                  setAuthDrawerOpen(true);
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-secondary md:hidden"
+              >
+                Log in
+              </button>
+              <Link to="/login" className="hidden md:block px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>Log in</Link>
+
+              <button
+                onClick={() => {
+                  setAuthInitialView('register');
+                  setAuthDrawerOpen(true);
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary md:hidden"
+              >
+                Sign up
+              </button>
+              <Link to="/register" className="hidden md:block px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>Sign up</Link>
+
               <div className="my-1 border-t border-border" />
               <Link to="/become-host" className="block px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>Become a Host</Link>
               <button className="block w-full text-left px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>Help Center</button>
@@ -146,6 +165,13 @@ export const Navbar = () => {
           )}
         </div>
       )}
+
+      {/* Auth Drawer for Mobile */}
+      <AuthDrawer
+        isOpen={authDrawerOpen}
+        onClose={() => setAuthDrawerOpen(false)}
+        initialView={authInitialView}
+      />
     </header>
   );
 };

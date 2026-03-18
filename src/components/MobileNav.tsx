@@ -1,5 +1,8 @@
 import { Search, Heart, Map, MessageSquare, User, LayoutDashboard, Home, Calendar, List } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { AuthDrawer } from './AuthDrawer';
 
 const guestItems = [
   { icon: Search, label: 'Explore', path: '/' },
@@ -19,25 +22,58 @@ const hostItems = [
 
 export const MobileNav = () => {
   const location = useLocation();
+  const [session, setSession] = useState<any>(null);
+  const [authDrawerOpen, setAuthDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+  }, []);
+
   const isHostMode = location.pathname.startsWith('/host-dashboard');
   const navItems = isHostMode ? hostItems : guestItems;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t border-border bg-card/80 px-2 pb-safe backdrop-blur-xl md:hidden">
-      {navItems.map(({ icon: Icon, label, path }) => {
-        const active = location.pathname === path || (path === '/' && location.pathname === '/');
-        return (
-          <Link
-            key={label}
-            to={path}
-            className={`flex flex-col items-center gap-0.5 transition-colors ${active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-              }`}
-          >
-            <Icon size={20} strokeWidth={1.5} />
-            <span className="text-[10px] font-medium tracking-wider">{label}</span>
-          </Link>
-        );
-      })}
-    </nav>
+    <>
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t border-border bg-card/80 px-2 pb-safe backdrop-blur-xl md:hidden">
+        {navItems.map(({ icon: Icon, label, path }) => {
+          const active = location.pathname === path || (path === '/' && location.pathname === '/');
+          const isProfile = label === 'Profile';
+
+          if (isProfile && !session) {
+            return (
+              <button
+                key={label}
+                onClick={() => setAuthDrawerOpen(true)}
+                className={`flex flex-col items-center gap-0.5 transition-colors ${active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+              >
+                <Icon size={20} strokeWidth={1.5} />
+                <span className="text-[10px] font-medium tracking-wider">{label}</span>
+              </button>
+            );
+          }
+
+          return (
+            <Link
+              key={label}
+              to={path}
+              className={`flex flex-col items-center gap-0.5 transition-colors ${active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                }`}
+            >
+              <Icon size={20} strokeWidth={1.5} />
+              <span className="text-[10px] font-medium tracking-wider">{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <AuthDrawer
+        isOpen={authDrawerOpen}
+        onClose={() => setAuthDrawerOpen(false)}
+        initialView="login"
+      />
+    </>
   );
 };

@@ -30,6 +30,15 @@ const AllListings = () => {
     );
 
     useEffect(() => {
+        if (isFilterOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [isFilterOpen]);
+
+    useEffect(() => {
         // Source of truth: URL params
         const urlLocation = searchParams.get('location');
         const urlCategory = searchParams.get('category');
@@ -124,7 +133,7 @@ const AllListings = () => {
 
     const SidebarFilters = () => (
         <div className="space-y-8 pr-8">
-            <div>
+            <div className="md:block hidden">
                 <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-4">Search</h3>
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />

@@ -103,30 +103,7 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Navbar />
 
-      {/* MOBILE HERO ONLY */}
-      <section className="md:hidden relative overflow-hidden bg-gradient-to-b from-background to-slate-50 px-4 pt-4 pb-0">
-        <div className="container relative">
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            animate="show"
-            className="text-left"
-          >
-            <motion.h1
-              variants={fadeUp}
-              className="font-display text-3xl font-bold tracking-tight text-[#1A6B4A]"
-            >
-              Find your perfect stay
-            </motion.h1>
-            <motion.p
-              variants={fadeUp}
-              className="mt-2 text-sm text-muted-foreground"
-            >
-              Discover curated homes across Tanzania
-            </motion.p>
-          </motion.div>
-        </div>
-      </section>
+
 
 
       {/* DISCOVER SECTION */}
