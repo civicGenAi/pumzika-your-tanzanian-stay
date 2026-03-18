@@ -2,7 +2,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
 import { Button } from '@/components/ui/button';
-import { MapPin, Calendar, Clock, Loader2, Plane, MessageSquare, Info, ShieldCheck, User } from 'lucide-react';
+import { MapPin, Calendar, Clock, Loader2, Plane, MessageSquare, Info, ShieldCheck, User, Star } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -16,6 +16,7 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog";
+import { ReviewDialog } from '@/components/ReviewDialog';
 
 const Trips = () => {
     const navigate = useNavigate();
@@ -23,6 +24,7 @@ const Trips = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedTrip, setSelectedTrip] = useState<any>(null);
     const [isItineraryOpen, setIsItineraryOpen] = useState(false);
+    const [isReviewOpen, setIsReviewOpen] = useState(false);
 
     useEffect(() => {
         fetchTrips();
@@ -159,6 +161,15 @@ const Trips = () => {
                                             >
                                                 <MessageSquare size={18} /> Message Host
                                             </Button>
+
+                                            {trip.status === 'completed' && (
+                                                <Button
+                                                    onClick={() => { setSelectedTrip(trip); setIsReviewOpen(true); }}
+                                                    variant="ghost" className="rounded-full px-8 flex items-center gap-2 text-amber-600 hover:bg-amber-50 font-bold"
+                                                >
+                                                    <Star size={18} className="fill-amber-400 text-amber-400" /> Leave Review
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -264,6 +275,18 @@ const Trips = () => {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {selectedTrip && (
+                <ReviewDialog
+                    isOpen={isReviewOpen}
+                    onClose={() => setIsReviewOpen(false)}
+                    bookingId={selectedTrip.id}
+                    listingId={selectedTrip.listing_id}
+                    hostId={selectedTrip.listing.host_id}
+                    listingTitle={selectedTrip.listing.title}
+                    onSuccess={fetchTrips}
+                />
+            )}
 
             <Footer />
             <MobileNav />

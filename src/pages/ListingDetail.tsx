@@ -40,6 +40,7 @@ const ListingDetail = () => {
     const { openAuth } = useAuthDrawer();
     const [user, setUser] = useState<any>(null);
     const [listing, setListing] = useState<any>(null);
+    const [reviews, setReviews] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     // Booking states
@@ -59,6 +60,7 @@ const ListingDetail = () => {
             setUser(session?.user ?? null);
         });
         fetchListing();
+        fetchReviews();
     }, [id]);
 
     useEffect(() => {
@@ -107,6 +109,27 @@ const ListingDetail = () => {
             toast.error('Could not load listing details');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const fetchReviews = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('reviews')
+                .select(`
+                    *,
+                    reviewer:users!reviewer_id (
+                        full_name,
+                        avatar_url
+                    )
+                `)
+                .eq('listing_id', id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            setReviews(data || []);
+        } catch (error) {
+            console.error('Error fetching reviews:', error);
         }
     };
 
@@ -470,6 +493,67 @@ const ListingDetail = () => {
                         </div>
                     </div>
                 </section>
+
+                <Separator className="my-12" />
+
+                {/* Reviews Section */}
+                <section id="reviews" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex items-center gap-3 mb-8">
+                        <Star className="fill-accent text-accent" size={24} />
+                        <h2 className="font-display text-2xl font-bold">
+                            {reviews.length > 0 ? (
+                                <div className="flex items-center gap-2">
+                                    <span>{(reviews.reduce((acc, r) => acc + r.overall_rating, 0) / reviews.length).toFixed(1)}</span>
+                                    <span>·</span>
+                                    <span>{reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}</span>
+                                </div>
+                            ) : (
+                                'No reviews yet'
+                            )}
+                        </h2>
+                    </div>
+
+                    {reviews.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">
+                            {reviews.map((review) => (
+                                <div key={review.id} className="space-y-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 rounded-full bg-secondary overflow-hidden border border-border">
+                                            {review.reviewer?.avatar_url ? (
+                                                <img src={review.reviewer.avatar_url} alt={review.reviewer.full_name} className="h-full w-full object-cover" />
+                                            ) : (
+                                                <div className="h-full w-full flex items-center justify-center text-muted-foreground bg-primary/5">
+                                                    <UserIcon size={20} className="text-primary/40" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-[#1A6B4A]">{review.reviewer?.full_name}</p>
+                                            <p className="text-xs text-muted-foreground">{new Date(review.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-1">
+                                        {[...Array(5)].map((_, i) => (
+                                            <Star
+                                                key={i}
+                                                size={12}
+                                                className={i < review.overall_rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}
+                                            />
+                                        ))}
+                                    </div>
+                                    <p className="text-sm leading-relaxed text-foreground/80 italic">
+                                        "{review.comment}"
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="bg-secondary/20 rounded-3xl p-12 text-center border border-dashed border-border">
+                            <Star size={48} className="mx-auto text-muted-foreground mb-4 opacity-20" />
+                            <p className="text-muted-foreground">Every stay here can be reviewed by guests. Book your stay to be the first!</p>
+                        </div>
+                    )}
+                </section>
             </main>
 
             <Footer />
@@ -477,5 +561,24 @@ const ListingDetail = () => {
         </div>
     );
 };
+
+// Internal icon component to avoid conflicts
+const UserIcon = ({ size, className }: { size: number, className: string }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+    >
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+    </svg>
+);
 
 export default ListingDetail;

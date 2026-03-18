@@ -64,14 +64,6 @@ export const Navbar = () => {
 
         {/* Right actions */}
         <div className="flex items-center gap-3">
-          {(!session || role !== 'host') && !isHostMode && (
-            <Link
-              to="/become-host"
-              className="hidden rounded-full border border-border px-6 py-2.5 text-sm font-bold text-foreground transition-all hover:bg-secondary hover:shadow-sm md:block"
-            >
-              Become a Host
-            </Link>
-          )}
           <button className="hidden rounded-full p-2.5 text-foreground transition-colors hover:bg-secondary md:flex">
             <Globe size={20} strokeWidth={1.5} />
           </button>
@@ -114,13 +106,9 @@ export const Navbar = () => {
                 <MessageSquare size={16} /> Messages
               </Link>
               <div className="my-1 border-t border-border" />
-              {role === 'host' ? (
+              {role === 'host' && (
                 <Link to="/host-dashboard" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-primary hover:bg-secondary" onClick={() => setMenuOpen(false)}>
                   <LayoutDashboard size={16} /> Host Dashboard
-                </Link>
-              ) : (
-                <Link to="/become-host" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary" onClick={() => setMenuOpen(false)}>
-                  Become a Host
                 </Link>
               )}
               <div className="my-1 border-t border-border" />
