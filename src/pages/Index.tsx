@@ -344,7 +344,7 @@ const Index = () => {
       <a
         href="https://wa.me/255759234234"
         target="_blank"
-        className="fixed bottom-6 right-6 z-[100] group flex items-center gap-3 md:gap-4"
+        className="fixed bottom-6 right-6 z-[100] group hidden md:flex items-center gap-3 md:gap-4"
       >
         <div className="bg-white px-4 py-2 rounded-2xl shadow-xl border border-slate-100 hidden group-hover:block animate-in slide-in-from-right-4 fade-in duration-300">
           <p className="text-xs font-bold text-[#1A6B4A] whitespace-nowrap">Need help? Chat with us</p>

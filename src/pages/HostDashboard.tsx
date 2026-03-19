@@ -11,6 +11,7 @@ import { HostCalendar } from '@/components/HostCalendar';
 import { HostSettings } from '@/components/HostSettings';
 import { ListingWizard } from '@/components/ListingWizard';
 import { StateFeedback } from '@/components/StateFeedback';
+import { Inbox } from './Inbox';
 
 const HostDashboard = () => {
     const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +45,7 @@ const HostDashboard = () => {
                             <Route path="reviews" element={<HostReviews />} />
                             <Route path="calendar" element={<HostCalendar />} />
                             <Route path="settings" element={<HostSettings />} />
-                            <Route path="messages" element={<div className="p-8 text-center bg-white rounded-2xl shadow-sm"><h2 className="text-2xl font-bold text-[#1A6B4A]">Messages</h2><p className="text-muted-foreground mt-2">Communicate with your guests. Integrated with Global Inbox.</p></div>} />
+                            <Route path="messages" element={<Inbox isDashboard />} />
                         </Routes>
                     )}
                 </div>

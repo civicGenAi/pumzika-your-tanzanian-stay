@@ -10,8 +10,9 @@ import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { Footer } from '@/components/Footer'; // Added import for Footer
 
-const Inbox = () => {
+export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const [conversations, setConversations] = useState<any[]>([]);
@@ -83,11 +84,12 @@ const Inbox = () => {
         // Handle direct navigation via ?conv=ID or ?conv=new
         const convId = searchParams.get('conv');
         const guestId = searchParams.get('guest');
+        const hostId = searchParams.get('host');
         const listingId = searchParams.get('listing');
         const bookingId = searchParams.get('booking');
 
-        if (convId === 'new' && guestId && currentUser) {
-            handleNewConversation(guestId, listingId, bookingId);
+        if (convId === 'new' && (guestId || hostId) && currentUser) {
+            handleNewConversation(guestId, hostId, listingId, bookingId);
         } else if (convId && conversations.length > 0) {
             const found = conversations.find(c => c.id === convId);
             if (found) setSelectedConv(found);
@@ -97,16 +99,23 @@ const Inbox = () => {
         }
     }, [searchParams, conversations, currentUser]);
 
-    const handleNewConversation = async (guestId: string, listingId: string | null, bookingId: string | null) => {
+    const handleNewConversation = async (guestId: string | null, hostId: string | null, listingId: string | null, bookingId: string | null) => {
         if (!currentUser) return;
+
+        // Determine final guest and host IDs
+        const finalGuestId = guestId || currentUser.id;
+        const finalHostId = hostId || currentUser.id;
+
+        // Prevent messaging self
+        if (finalGuestId === finalHostId) return;
 
         try {
             // Check if conversation already exists
             const { data: existing } = await supabase
                 .from('conversations')
                 .select('*')
-                .eq('guest_id', guestId)
-                .eq('host_id', currentUser.id)
+                .eq('guest_id', finalGuestId)
+                .eq('host_id', finalHostId)
                 .maybeSingle();
 
             if (existing) {
@@ -118,11 +127,13 @@ const Inbox = () => {
             const { data: newConv, error } = await supabase
                 .from('conversations')
                 .insert({
-                    guest_id: guestId,
-                    host_id: currentUser.id,
+                    guest_id: finalGuestId,
+                    host_id: finalHostId,
                     listing_id: listingId,
                     booking_id: bookingId,
-                    last_message_at: new Date().toISOString()
+                    last_message_at: new Date().toISOString(),
+                    is_read_host: currentUser.id === finalHostId,
+                    is_read_guest: currentUser.id === finalGuestId
                 })
                 .select(`
                     *,
@@ -141,7 +152,7 @@ const Inbox = () => {
                 setSelectedConv(newConv);
             }
         } catch (error) {
-            console.error('Error creating conversation:', error);
+            console.error('New conversation error:', error);
             toast.error('Could not start conversation');
         }
     };
@@ -267,9 +278,14 @@ const Inbox = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background pb-20 md:pb-0 overflow-hidden">
-            <Navbar />
-            <main className="container pt-6 md:pt-10 h-[calc(100vh-100px)]">
+        <div className={cn("min-h-screen bg-white", !isDashboard && "pb-20 md:pb-0")}>
+            {!isDashboard && <Navbar />}
+
+            <main className={cn(
+                "container max-w-7xl px-0 md:px-4",
+                isDashboard ? "pt-0" : "pt-4 md:pt-8",
+                "h-[calc(100vh-100px)]" // Kept original height calculation
+            )}>
                 <div className="flex h-full border border-border rounded-[32px] overflow-hidden bg-card shadow-2xl">
                     {/* Sidebar */}
                     <div className={`${isMobileView && selectedConv ? 'hidden' : 'flex'} w-full md:w-[380px] border-r border-border flex flex-col bg-slate-50/50`}>
@@ -428,7 +444,9 @@ const Inbox = () => {
                     </div>
                 </div>
             </main>
-            <MobileNav />
+
+            {!isDashboard && <Footer />}
+            {!isDashboard && <MobileNav />}
         </div>
     );
 };

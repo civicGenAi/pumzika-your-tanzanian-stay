@@ -16,7 +16,8 @@ import {
     Utensils,
     Lock,
     X,
-    Info
+    Info,
+    MessageSquare
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -278,6 +279,21 @@ const ListingDetail = () => {
                                 <p className="mt-1 text-muted-foreground capitalize">
                                     {listing.category} in {listing.region} · {listing.guests} guests · {listing.bedrooms} bedrooms · {listing.beds || 0} beds · {listing.bathrooms} bath
                                 </p>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="mt-4 rounded-xl border-[#1A6B4A]/20 text-[#1A6B4A] hover:bg-[#1A6B4A]/5 gap-2"
+                                    onClick={() => {
+                                        if (!user) {
+                                            openAuth('login');
+                                            return;
+                                        }
+                                        navigate(`/inbox?conv=new&host=${listing.host_id}&listing=${listing.id}`);
+                                    }}
+                                >
+                                    <MessageSquare size={16} />
+                                    Message Host
+                                </Button>
                             </div>
                             <div className="h-12 w-12 rounded-full bg-secondary overflow-hidden">
                                 {listing.host?.avatar_url && (
