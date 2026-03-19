@@ -3,6 +3,7 @@ import { User, Bell, Shield, CreditCard, HelpCircle, LogOut, Loader2, Camera, Ch
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { EditProfileDialog } from '@/components/EditProfileDialog';
 import { SecurityDialog } from '@/components/SecurityDialog';
 import { PaymentsDialog } from '@/components/PaymentsDialog';
@@ -15,12 +16,13 @@ export const HostSettings = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
 
-    // Dialog states
+    // Dialog/Tab states
     const [editOpen, setEditOpen] = useState(false);
     const [securityOpen, setSecurityOpen] = useState(false);
     const [paymentsOpen, setPaymentsOpen] = useState(false);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [helpOpen, setHelpOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('profile');
 
     useEffect(() => {
         fetchProfile();
@@ -64,53 +66,70 @@ export const HostSettings = () => {
         }
     };
 
-    const categories = [
+    const settingsTabs = [
         {
-            title: 'Profile & Verification',
+            id: 'profile',
+            title: 'Public Profile',
+            icon: User,
+            desc: 'Your public info and bio',
             items: [
                 {
-                    icon: User,
                     label: 'Personal Information',
                     desc: 'Manage your host bio, name and phone',
+                    actionLabel: 'Edit Profile',
                     onClick: () => setEditOpen(true)
                 },
                 {
-                    icon: Shield,
-                    label: 'Legal & Help',
-                    desc: 'Host terms and support resources',
-                    onClick: () => setHelpOpen(true)
-                },
+                    label: 'Verification Status',
+                    desc: 'Manage your identity and host badges',
+                    actionLabel: 'Check Status',
+                    onClick: () => { }
+                }
             ]
         },
         {
-            title: 'Business & Financials',
+            id: 'business',
+            title: 'Hosting & Business',
+            icon: CreditCard,
+            desc: 'Payouts and hosting preferences',
             items: [
                 {
-                    icon: CreditCard,
                     label: 'Payout Methods',
                     desc: 'Where you receive your earnings',
+                    actionLabel: 'Manage Payouts',
                     onClick: () => setPaymentsOpen(true)
                 },
                 {
-                    icon: Bell,
                     label: 'Notifications',
                     desc: 'Control host alerts and guest messages',
+                    actionLabel: 'Preferences',
                     onClick: () => setNotificationsOpen(true)
-                },
+                }
             ]
         },
         {
-            title: 'Account Settings',
+            id: 'account',
+            title: 'Account & Security',
+            icon: Shield,
+            desc: 'Security and login settings',
             items: [
                 {
-                    icon: Shield,
                     label: 'Login & Security',
                     desc: 'Secure your hosting account',
+                    actionLabel: 'Update Security',
                     onClick: () => setSecurityOpen(true)
                 },
+                {
+                    label: 'Legal & Help',
+                    desc: 'Host terms and support resources',
+                    actionLabel: 'Get Help',
+                    onClick: () => setHelpOpen(true)
+                }
             ]
         }
     ];
+
+    const currentTab = settingsTabs.find(t => t.id === activeTab) || settingsTabs[0];
 
     if (isLoading) {
         return (
@@ -153,31 +172,67 @@ export const HostSettings = () => {
                 </div>
             </div>
 
-            {/* Settings Categories */}
-            <div className="space-y-12">
-                {categories.map((category, idx) => (
-                    <div key={idx} className="space-y-6">
-                        <h3 className="text-[10px] font-bold uppercase tracking-[2px] text-[#1A6B4A] px-2">{category.title}</h3>
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {category.items.map((item, i) => (
+            {/* Main Settings Layout */}
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+                {/* Side Navigation */}
+                <div className="w-full lg:w-[320px] bg-white rounded-[32px] p-4 shadow-sm border border-border/50 shrink-0">
+                    <div className="space-y-1">
+                        {settingsTabs.map((tab) => {
+                            const isActive = activeTab === tab.id;
+                            return (
                                 <button
-                                    key={i}
-                                    onClick={item.onClick}
-                                    className="flex flex-col gap-4 p-8 bg-white border border-border/50 rounded-[32px] hover:shadow-xl hover:shadow-[#1A6B4A]/5 hover:border-[#1A6B4A]/20 transition-all text-left group relative overflow-hidden"
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={cn(
+                                        "w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left group",
+                                        isActive ? "bg-[#1A6B4A] text-white shadow-lg" : "hover:bg-slate-50 text-slate-600"
+                                    )}
                                 >
-                                    <div className="absolute top-0 right-0 h-24 w-24 bg-[#1A6B4A]/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-[#1A6B4A]/10 transition-colors" />
-                                    <div className="h-14 w-14 bg-[#1A6B4A]/10 rounded-2xl flex items-center justify-center text-[#1A6B4A] group-hover:bg-[#1A6B4A] group-hover:text-white transition-all duration-300 relative z-10">
-                                        <item.icon size={28} strokeWidth={1.5} />
+                                    <div className={cn(
+                                        "h-10 w-10 rounded-xl flex items-center justify-center transition-colors",
+                                        isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-[#1A6B4A]/10 group-hover:text-[#1A6B4A]"
+                                    )}>
+                                        <tab.icon size={20} />
                                     </div>
-                                    <div className="relative z-10">
-                                        <h3 className="font-bold text-lg text-[#1A6B4A]">{item.label}</h3>
-                                        <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{item.desc}</p>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-sm">{tab.title}</p>
+                                        <p className={cn("text-[10px] truncate uppercase tracking-widest font-medium", isActive ? "text-white/70" : "text-muted-foreground")}>
+                                            {tab.id === 'profile' ? 'Public' : tab.id === 'business' ? 'Hosting' : 'Security'}
+                                        </p>
                                     </div>
                                 </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Content Area */}
+                <div className="flex-1 w-full space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                    <div className="bg-white rounded-[40px] p-10 shadow-sm border border-border/50">
+                        <div className="mb-10">
+                            <h3 className="text-2xl font-bold text-[#1A6B4A] font-display">{currentTab.title}</h3>
+                            <p className="text-muted-foreground mt-1 text-sm">{currentTab.desc}</p>
+                        </div>
+
+                        <div className="space-y-4">
+                            {currentTab.items.map((item, i) => (
+                                <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-6 rounded-3xl bg-slate-50/50 border border-slate-100 hover:border-[#1A6B4A]/10 transition-colors">
+                                    <div className="space-y-1">
+                                        <p className="font-bold text-[#1A6B4A]">{item.label}</p>
+                                        <p className="text-sm text-muted-foreground">{item.desc}</p>
+                                    </div>
+                                    <Button
+                                        onClick={item.onClick}
+                                        variant="outline"
+                                        className="rounded-full border-[#1A6B4A]/20 text-[#1A6B4A] hover:bg-[#1A6B4A] hover:text-white transition-all px-6 h-10 text-xs font-bold"
+                                    >
+                                        {item.actionLabel}
+                                    </Button>
+                                </div>
                             ))}
                         </div>
                     </div>
-                ))}
+                </div>
             </div>
 
             {/* Dialogs */}

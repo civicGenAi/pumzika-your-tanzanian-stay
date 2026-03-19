@@ -205,6 +205,10 @@ export const HostBookings = () => {
                 <DialogContent className="max-w-2xl rounded-[32px] p-0 overflow-hidden border-none shadow-2xl">
                     {selectedBooking && (
                         <>
+                            <div className="sr-only">
+                                <DialogTitle>Booking Details for {selectedBooking.guest?.full_name}</DialogTitle>
+                                <DialogDescription>Review guest information and reservation details.</DialogDescription>
+                            </div>
                             <div className="bg-[#1A6B4A] p-8 text-white relative">
                                 <div className="absolute right-0 top-0 h-32 w-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
                                 <div className="relative z-10 flex items-center gap-6">

@@ -240,13 +240,15 @@ const Inbox = () => {
 
             if (msgError) throw msgError;
 
-            // Update conversation preview
+            // Update conversation preview and unread status for recipient
+            const isHost = selectedConv.host_id === currentUser.id;
+            const updateData = isHost
+                ? { last_message: content, updated_at: new Date().toISOString(), is_read_guest: false }
+                : { last_message: content, updated_at: new Date().toISOString(), is_read_host: false };
+
             await supabase
                 .from('conversations')
-                .update({
-                    last_message: content,
-                    updated_at: new Date().toISOString()
-                })
+                .update(updateData)
                 .eq('id', selectedConv.id);
 
             // Refresh local state for preview

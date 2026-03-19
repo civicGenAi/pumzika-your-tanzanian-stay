@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -23,7 +24,7 @@ const navLinks = [
     { label: 'Overview', href: '/host-dashboard', icon: BarChart3 },
     { label: 'My Listings', href: '/host-dashboard/listings', icon: Home },
     { label: 'Bookings', href: '/host-dashboard/bookings', icon: CalendarIcon },
-    { label: 'Messages', href: '/host-dashboard/messages', icon: MessageSquare, badge: 3 },
+    { label: 'Messages', href: '/host-dashboard/messages', icon: MessageSquare, isMessages: true },
     { label: 'Earnings', href: '/host-dashboard/earnings', icon: DollarSign },
     { label: 'Reviews', href: '/host-dashboard/reviews', icon: Star },
     { label: 'Calendar', href: '/host-dashboard/calendar', icon: CalendarIcon },
@@ -32,7 +33,46 @@ const navLinks = [
 
 export const HostSidebar = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
     const location = useLocation();
+
+    useEffect(() => {
+        fetchUnreadCount();
+
+        // Subscription for real-time updates
+        const channel = supabase
+            .channel('unread_messages')
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'conversations'
+            }, () => {
+                fetchUnreadCount();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, []);
+
+    const fetchUnreadCount = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { count, error } = await supabase
+                .from('conversations')
+                .select('*', { count: 'exact', head: true })
+                .eq('host_id', user.id)
+                .eq('is_read_host', false);
+
+            if (error) throw error;
+            setUnreadCount(count || 0);
+        } catch (error) {
+            console.error('Error fetching unread count:', error);
+        }
+    };
 
     const SidebarContent = () => (
         <div className="flex h-full flex-col bg-[#1A6B4A] text-white">
@@ -63,9 +103,9 @@ export const HostSidebar = () => {
                                 <link.icon size={20} strokeWidth={isActive ? 2.5 : 2} className={cn(isActive ? "text-[#E8A838]" : "text-white/60")} />
                                 <span>{link.label}</span>
                             </div>
-                            {link.badge && (
-                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E8A838] text-[10px] text-[#1A6B4A]">
-                                    {link.badge}
+                            {link.isMessages && unreadCount > 0 && (
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E8A838] text-[10px] text-[#1A6B4A] font-bold shadow-sm">
+                                    {unreadCount}
                                 </span>
                             )}
                         </Link>
