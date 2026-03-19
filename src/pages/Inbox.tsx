@@ -23,6 +23,8 @@ export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
     const [currentUser, setCurrentUser] = useState<any>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [isMobileView, setIsMobileView] = useState(false);
+    const isCreatingConv = useRef(false);
+    const messageSubCleanup = useRef<(() => void) | null>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -38,9 +40,9 @@ export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
             setCurrentUser(user);
             fetchConversations(user.id);
 
-            // Subscribe to real-time conversation updates (for unread markers/last message)
-            const channel = supabase
-                .channel('conversation_updates')
+            // Subscribe to real-time conversation updates for BOTH guest and host roles
+            const hostChannel = supabase
+                .channel('conv_updates_host')
                 .on('postgres_changes', {
                     event: '*',
                     schema: 'public',
@@ -51,11 +53,23 @@ export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
                 })
                 .subscribe();
 
-            return channel;
+            const guestChannel = supabase
+                .channel('conv_updates_guest')
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'conversations',
+                    filter: `guest_id=eq.${user.id}`
+                }, () => {
+                    fetchConversations(user.id);
+                })
+                .subscribe();
+
+            return { hostChannel, guestChannel };
         };
 
-        let activeChannel: any;
-        checkUser().then(channel => { activeChannel = channel; });
+        let channels: any;
+        checkUser().then(c => { channels = c; });
 
         // Responsive handling
         const checkMobile = () => setIsMobileView(window.innerWidth < 768);
@@ -64,16 +78,27 @@ export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
 
         return () => {
             window.removeEventListener('resize', checkMobile);
-            if (activeChannel) supabase.removeChannel(activeChannel);
+            if (channels?.hostChannel) supabase.removeChannel(channels.hostChannel);
+            if (channels?.guestChannel) supabase.removeChannel(channels.guestChannel);
         };
     }, []);
 
     useEffect(() => {
         if (selectedConv) {
             fetchMessages(selectedConv.id);
-            subscribeToMessages(selectedConv.id);
+            // Clean up previous subscription before creating new one
+            if (messageSubCleanup.current) {
+                messageSubCleanup.current();
+            }
+            messageSubCleanup.current = subscribeToMessages(selectedConv.id);
             scrollToBottom();
         }
+        return () => {
+            if (messageSubCleanup.current) {
+                messageSubCleanup.current();
+                messageSubCleanup.current = null;
+            }
+        };
     }, [selectedConv]);
 
     useEffect(() => {
@@ -88,16 +113,29 @@ export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
         const listingId = searchParams.get('listing');
         const bookingId = searchParams.get('booking');
 
-        if (convId === 'new' && (guestId || hostId) && currentUser) {
-            handleNewConversation(guestId, hostId, listingId, bookingId);
-        } else if (convId && conversations.length > 0) {
+        if (convId === 'new' && (guestId || hostId) && currentUser && !isCreatingConv.current) {
+            isCreatingConv.current = true;
+            handleNewConversation(guestId, hostId, listingId, bookingId).finally(() => {
+                isCreatingConv.current = false;
+            });
+        } else if (convId && convId !== 'new' && conversations.length > 0) {
             const found = conversations.find(c => c.id === convId);
             if (found) setSelectedConv(found);
-        } else if (conversations.length > 0 && !selectedConv && !isMobileView) {
+        } else if (conversations.length > 0 && !selectedConv && !isMobileView && convId !== 'new') {
             // Select first conversation by default on desktop
             setSelectedConv(conversations[0]);
         }
     }, [searchParams, conversations, currentUser]);
+
+    const fullConvSelect = `
+        *,
+        guest:users!guest_id (full_name, avatar_url),
+        host:users!host_id (full_name, avatar_url),
+        listing:listings (title, region),
+        booking:bookings (
+            listing:listings (title, region)
+        )
+    `;
 
     const handleNewConversation = async (guestId: string | null, hostId: string | null, listingId: string | null, bookingId: string | null) => {
         if (!currentUser) return;
@@ -110,16 +148,21 @@ export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
         if (finalGuestId === finalHostId) return;
 
         try {
-            // Check if conversation already exists
+            // Check if conversation already exists (with full join data)
             const { data: existing } = await supabase
                 .from('conversations')
-                .select('*')
+                .select(fullConvSelect)
                 .eq('guest_id', finalGuestId)
                 .eq('host_id', finalHostId)
                 .maybeSingle();
 
             if (existing) {
                 setSelectedConv(existing);
+                // Also ensure it's in the conversation list
+                setConversations(prev => {
+                    if (prev.find(c => c.id === existing.id)) return prev;
+                    return [existing, ...prev];
+                });
                 return;
             }
 
@@ -129,29 +172,42 @@ export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
                 .insert({
                     guest_id: finalGuestId,
                     host_id: finalHostId,
-                    listing_id: listingId,
-                    booking_id: bookingId,
+                    listing_id: listingId || null,
+                    booking_id: bookingId || null,
                     last_message_at: new Date().toISOString(),
                     is_read_host: currentUser.id === finalHostId,
                     is_read_guest: currentUser.id === finalGuestId
                 })
-                .select(`
-                    *,
-                    guest:users!guest_id (full_name, avatar_url),
-                    host:users!host_id (full_name, avatar_url),
-                    listing:listings (title, region),
-                    booking:bookings (
-                        listing:listings (title, region)
-                    )
-                `)
+                .select(fullConvSelect)
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                // Handle duplicate key gracefully — conversation was created between check and insert
+                if (error.code === '23505') {
+                    const { data: fallback } = await supabase
+                        .from('conversations')
+                        .select(fullConvSelect)
+                        .eq('guest_id', finalGuestId)
+                        .eq('host_id', finalHostId)
+                        .single();
+
+                    if (fallback) {
+                        setSelectedConv(fallback);
+                        setConversations(prev => {
+                            if (prev.find(c => c.id === fallback.id)) return prev;
+                            return [fallback, ...prev];
+                        });
+                    }
+                    return;
+                }
+                throw error;
+            }
+
             if (newConv) {
                 setConversations(prev => [newConv, ...prev]);
                 setSelectedConv(newConv);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('New conversation error:', error);
             toast.error('Could not start conversation');
         }
