@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, MoreVertical, Eye, Trash2, Star, CheckCircle2, AlertCircle, Clock, MapPin } from 'lucide-react';
+import { Search, MoreVertical, Eye, Trash2, Star, CheckCircle2, AlertCircle, Clock, MapPin, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 
 const AdminListings = () => {
@@ -60,19 +61,19 @@ const AdminListings = () => {
         }
     };
 
-    const handleUpdateStatus = async (id: string, newStatus: string) => {
+    const handleUpdateVerification = async (id: string, newStatus: string) => {
         try {
             const { error } = await supabase
                 .from('listings')
-                .update({ status: newStatus })
+                .update({ verification_status: newStatus })
                 .eq('id', id);
 
             if (error) throw error;
-            toast.success(`Listing status updated to ${newStatus}`);
+            toast.success(`Verification status updated to ${newStatus}`);
             fetchListings();
         } catch (error) {
-            console.error('Error updating status:', error);
-            toast.error('Failed to update status');
+            console.error('Error updating verification:', error);
+            toast.error('Failed to update verification status');
         }
     };
 
@@ -91,6 +92,22 @@ const AdminListings = () => {
         } catch (error) {
             console.error('Error deleting listing:', error);
             toast.error('Failed to delete listing');
+        }
+    };
+
+    const handleUpdateStatus = async (id: string, newStatus: string) => {
+        try {
+            const { error } = await supabase
+                .from('listings')
+                .update({ status: newStatus })
+                .eq('id', id);
+
+            if (error) throw error;
+            toast.success(`Listing status updated to ${newStatus}`);
+            fetchListings();
+        } catch (error) {
+            console.error('Error updating status:', error);
+            toast.error('Failed to update status');
         }
     };
 
@@ -125,6 +142,7 @@ const AdminListings = () => {
                             <TableRow>
                                 <TableHead className="pl-6 py-4 font-semibold text-foreground">Property</TableHead>
                                 <TableHead className="font-semibold text-foreground">Status</TableHead>
+                                <TableHead className="font-semibold text-foreground">Verification</TableHead>
                                 <TableHead className="font-semibold text-foreground">Host</TableHead>
                                 <TableHead className="font-semibold text-foreground">Price/Night</TableHead>
                                 <TableHead className="font-semibold text-foreground text-center">Featured</TableHead>
@@ -172,6 +190,25 @@ const AdminListings = () => {
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
+                                            <div className="flex flex-col gap-1">
+                                                <Badge variant="outline" className={
+                                                    listing.verification_status === 'verified' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
+                                                        listing.verification_status === 'rejected' ? 'border-destructive text-destructive bg-destructive/5' :
+                                                            'border-amber-500 text-amber-700 bg-amber-50'
+                                                }>
+                                                    {listing.verification_status === 'verified' ? <CheckCircle2 size={10} className="mr-1" /> :
+                                                        listing.verification_status === 'rejected' ? <X size={10} className="mr-1" /> :
+                                                            <Clock size={10} className="mr-1" />}
+                                                    {listing.verification_status || 'pending'}
+                                                </Badge>
+                                                {listing.agreed_to_standards && (
+                                                    <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                                                        <CheckCircle2 size={10} /> Standards Signed
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
                                             <div className="truncate max-w-[150px]">
                                                 <p className="font-medium text-sm">{listing.host?.full_name}</p>
                                                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -202,11 +239,18 @@ const AdminListings = () => {
                                                     <DropdownMenuItem onClick={() => window.open(`/listing/${listing.id}`, '_blank')}>
                                                         <Eye className="mr-2 h-4 w-4" /> View Live
                                                     </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleUpdateVerification(listing.id, 'verified')}>
+                                                        <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" /> Verify Listing
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleUpdateVerification(listing.id, 'rejected')}>
+                                                        <X className="mr-2 h-4 w-4 text-destructive" /> Reject/Unverify
+                                                    </DropdownMenuItem>
+                                                    <Separator className="my-1" />
                                                     <DropdownMenuItem onClick={() => handleUpdateStatus(listing.id, 'published')}>
-                                                        <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" /> Approve/Publish
+                                                        <Eye className="mr-2 h-4 w-4 text-blue-600" /> Approve/Publish
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => handleUpdateStatus(listing.id, 'rejected')}>
-                                                        <AlertCircle className="mr-2 h-4 w-4 text-destructive" /> Reject
+                                                        <AlertCircle className="mr-2 h-4 w-4 text-destructive" /> Set as Rejected
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => handleDelete(listing.id)} className="text-destructive font-bold">
                                                         <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently

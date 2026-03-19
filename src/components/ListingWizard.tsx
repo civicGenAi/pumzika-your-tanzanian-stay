@@ -20,7 +20,8 @@ import {
     Car,
     Coffee,
     Utensils,
-    Lock
+    Lock,
+    CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,7 @@ const STEPS = [
     { title: 'Location', icon: MapPin, description: 'Where is your property?' },
     { title: 'Amenities', icon: Wifi, description: 'What do you offer?' },
     { title: 'Photos', icon: ImageIcon, description: 'Professional visuals' },
+    { title: 'Quality Promise', icon: CheckCircle2, description: 'Agree to standards' },
     { title: 'Review', icon: Check, description: 'Final check' },
 ];
 
@@ -69,7 +71,8 @@ export const ListingWizard = () => {
         bathrooms: 1,
         status: 'draft',
         amenities: [],
-        images: [] // { url, file, isPrimary }
+        images: [], // { url, file, isPrimary }
+        agreed_to_standards: false
     });
 
     useEffect(() => {
@@ -192,6 +195,7 @@ export const ListingWizard = () => {
                 bedrooms: Number(formData.bedrooms),
                 bathrooms: Number(formData.bathrooms),
                 amenities: formData.amenities,
+                agreed_to_standards: formData.agreed_to_standards,
                 status: 'draft',
                 updated_at: new Date().toISOString()
             };
@@ -240,6 +244,7 @@ export const ListingWizard = () => {
                 bedrooms: Number(formData.bedrooms),
                 bathrooms: Number(formData.bathrooms),
                 amenities: formData.amenities,
+                agreed_to_standards: formData.agreed_to_standards,
                 status: 'published',
                 updated_at: new Date().toISOString()
             };
@@ -458,6 +463,47 @@ export const ListingWizard = () => {
 
                         {currentStep === 5 && (
                             <Card className="rounded-3xl border-none shadow-sm overflow-hidden">
+                                <CardContent className="p-8 space-y-8">
+                                    <div className="text-center space-y-2">
+                                        <h3 className="text-2xl font-bold text-[#1A6B4A]">Pumzika Quality Promise</h3>
+                                        <p className="text-muted-foreground">To maintain our premium community standards, we require all hosts to commit to the following:</p>
+                                    </div>
+
+                                    <div className="grid gap-4 max-w-2xl mx-auto">
+                                        {[
+                                            { title: "Honest Representation", desc: "My photos and description accurately represent the property." },
+                                            { title: "Essential Amenities", desc: "I provide clean linen, working utilities, and a safe environment." },
+                                            { title: "Reliability", desc: "I will maintain my calendar and minimize cancellations." },
+                                            { title: "Local Compliance", desc: "I have the legal right to host this property in my region." }
+                                        ].map((item, index) => (
+                                            <div key={index} className="flex gap-4 p-4 rounded-2xl bg-secondary/30 border border-[#1A6B4A]/5">
+                                                <div className="h-6 w-6 rounded-full bg-[#1A6B4A] flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold">
+                                                    {index + 1}
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-sm text-[#1A6B4A]">{item.title}</h4>
+                                                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="flex items-center gap-3 p-6 rounded-2xl bg-[#1A6B4A]/5 border border-[#1A6B4A] max-w-2xl mx-auto cursor-pointer"
+                                        onClick={() => setFormData({ ...formData, agreed_to_standards: !formData.agreed_to_standards })}>
+                                        <div className={cn(
+                                            "h-6 w-6 rounded-md border-2 flex items-center justify-center transition-all",
+                                            formData.agreed_to_standards ? "bg-[#1A6B4A] border-[#1A6B4A]" : "border-[#1A6B4A]"
+                                        )}>
+                                            {formData.agreed_to_standards && <Check className="text-white" size={16} />}
+                                        </div>
+                                        <span className="text-sm font-bold text-[#1A6B4A]">I agree to the Pumzika Quality Standards</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {currentStep === 6 && (
+                            <Card className="rounded-3xl border-none shadow-sm overflow-hidden">
                                 <CardContent className="p-8 flex flex-col items-center text-center">
                                     <div className="h-20 w-20 rounded-full bg-emerald-100 flex items-center justify-center mb-6">
                                         <Check className="text-emerald-600" size={40} />
@@ -514,7 +560,7 @@ export const ListingWizard = () => {
                         {currentStep === STEPS.length - 1 ? (
                             <Button
                                 onClick={handleSubmit}
-                                disabled={isSaving || formData.images.length === 0}
+                                disabled={isSaving || formData.images.length === 0 || !formData.agreed_to_standards}
                                 className="rounded-xl h-12 px-8 bg-[#1A6B4A] hover:bg-[#1A6B4A]/90 gap-2 font-bold"
                             >
                                 {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} />}

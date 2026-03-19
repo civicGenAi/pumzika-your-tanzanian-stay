@@ -16,8 +16,6 @@ import {
     Utensils,
     Lock,
     X,
-    ChevronLeft,
-    ChevronRight,
     Info
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';

@@ -2,8 +2,9 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
 import { Button } from '@/components/ui/button';
-import { User as UserIcon, Shield, Bell, CreditCard, HelpCircle, LogOut, ChevronRight, Loader2, Camera, MapPin, Languages, CheckCircle2 } from 'lucide-react';
+import { User as UserIcon, Shield, Bell, CreditCard, HelpCircle, LogOut, ChevronRight, Loader2, Camera, MapPin, Languages, CheckCircle2, Star, Home } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -138,95 +139,135 @@ const Profile = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#F7F7F7] pb-20 md:pb-0">
+        <div className="min-h-screen bg-[#FDF6EE] pb-20 md:pb-0">
             <Navbar />
-            <main className="container pt-10 pb-16">
-                <div className="max-w-5xl mx-auto">
-                    <h1 className="text-3xl font-bold mb-10 text-[#1A6B4A]">Account Settings</h1>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                        {/* Profile Summary Card */}
-                        <div className="lg:col-span-1">
-                            <div className="bg-white rounded-[32px] p-8 shadow-sm border border-border sticky top-24">
-                                <div className="flex flex-col items-center text-center">
-                                    <div
-                                        className="relative group cursor-pointer h-32 w-32 rounded-full mb-6 ring-4 ring-[#1A6B4A]/5 ring-offset-4 overflow-hidden"
-                                        onClick={handleAvatarClick}
-                                    >
-                                        {profile?.avatar_url ? (
-                                            <img src={profile.avatar_url} alt={profile.full_name} className="h-full w-full object-cover group-hover:opacity-75 transition-opacity" />
-                                        ) : (
-                                            <div className="h-full w-full bg-[#1A6B4A] flex items-center justify-center text-4xl font-bold text-white group-hover:opacity-75 transition-opacity">
-                                                {profile?.full_name?.charAt(0) || 'P'}
-                                            </div>
-                                        )}
-                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {isUploading ? <Loader2 className="h-8 w-8 animate-spin text-white" /> : <Camera className="text-white" size={28} />}
+            {/* Header / Hero Area */}
+            <div className="bg-[#1A6B4A] pt-32 pb-48 relative overflow-hidden">
+                <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] animate-pulse" />
+                <div className="container relative z-10">
+                    <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-2">Account Hub</h1>
+                    <p className="text-emerald-100/80 text-lg">Manage your profile, security, and preferences.</p>
+                </div>
+            </div>
+
+            <main className="container -mt-32 pb-24 relative z-20">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+                    {/* Sidebar / Profile Card */}
+                    <div className="lg:col-span-4 space-y-6">
+                        <div className="bg-white rounded-[2rem] p-8 shadow-xl shadow-[#1A6B4A]/5 border border-[#1A6B4A]/5">
+                            <div className="flex flex-col items-center text-center">
+                                <div
+                                    className="relative group cursor-pointer h-32 w-32 rounded-full mb-6 ring-4 ring-[#E8A838]/20 ring-offset-4 overflow-hidden"
+                                    onClick={handleAvatarClick}
+                                >
+                                    {profile?.avatar_url ? (
+                                        <img src={profile.avatar_url} alt={profile.full_name} className="h-full w-full object-cover group-hover:opacity-75 transition-opacity" />
+                                    ) : (
+                                        <div className="h-full w-full bg-[#1A6B4A] flex items-center justify-center text-4xl font-bold text-white group-hover:opacity-75 transition-opacity">
+                                            {profile?.full_name?.charAt(0) || 'P'}
                                         </div>
+                                    )}
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {isUploading ? <Loader2 className="h-8 w-8 animate-spin text-white" /> : <Camera className="text-white" size={28} />}
                                     </div>
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={handleFileChange}
-                                    />
+                                </div>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                />
 
-                                    <h2 className="text-2xl font-bold text-[#1A6B4A]">{profile?.full_name}</h2>
-                                    <p className="text-muted-foreground mb-6 font-medium">{profile?.email}</p>
+                                <div className="space-y-1 mb-6">
+                                    <h2 className="text-2xl font-bold text-foreground">{profile?.full_name}</h2>
+                                    <div className="flex items-center justify-center gap-2">
+                                        <span className="text-sm font-medium text-muted-foreground">{profile?.email}</span>
+                                        {profile?.is_verified && (
+                                            <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-2 py-0 h-5 text-[10px]">
+                                                VERIFIED
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </div>
 
-                                    <div className="w-full space-y-4 text-left border-t border-border pt-6">
-                                        <div className="flex items-center gap-3 text-sm font-medium">
-                                            <CheckCircle2 size={18} className="text-[#1A6B4A]" />
-                                            Identity verified
+                                <div className="w-full pt-6 border-t border-border space-y-4">
+                                    <div className="flex items-center justify-between text-sm px-2">
+                                        <span className="text-muted-foreground flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> Identity</span>
+                                        <span className="font-bold text-emerald-600">Verified</span>
+                                    </div>
+                                    {profile?.role === 'host' && (
+                                        <div className="flex items-center justify-between text-sm px-2">
+                                            <span className="text-muted-foreground flex items-center gap-2"><Shield size={16} className="text-blue-500" /> Host Standing</span>
+                                            <span className="font-bold text-blue-600">Premium</span>
                                         </div>
-                                        {profile?.bio && (
-                                            <p className="text-sm text-muted-foreground line-clamp-3 italic">"{profile.bio}"</p>
-                                        )}
-                                        {profile?.languages?.length > 0 && (
-                                            <div className="flex items-center gap-3 text-sm">
-                                                <Languages size={18} className="text-[#E8A838]" />
-                                                <span>Speaks {profile.languages.join(', ')}</span>
-                                            </div>
-                                        )}
-                                    </div>
+                                    )}
+
+                                    {profile?.bio && (
+                                        <div className="bg-secondary/20 p-4 rounded-2xl text-left">
+                                            <p className="text-xs text-muted-foreground italic leading-relaxed">"{profile.bio}"</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Settings Menu Grid */}
-                        <div className="lg:col-span-2">
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                {menuItems.map((item, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={item.onClick}
-                                        className="flex flex-col gap-4 p-6 bg-white border border-border rounded-3xl hover:shadow-lg hover:border-transparent transition-all text-left group"
-                                    >
-                                        <div className="h-12 w-12 bg-[#1A6B4A]/10 rounded-2xl flex items-center justify-center text-[#1A6B4A] group-hover:bg-[#1A6B4A] group-hover:text-white transition-all duration-300">
-                                            <item.icon size={24} strokeWidth={1.5} />
+                        {/* Quick Actions */}
+                        <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-[#1A6B4A]/5">
+                            <h3 className="font-bold mb-4 px-2">Quick Access</h3>
+                            <div className="space-y-2">
+                                <Button variant="ghost" className="w-full justify-start rounded-xl gap-3 text-muted-foreground hover:text-[#1A6B4A] hover:bg-[#1A6B4A]/5 h-12" onClick={() => navigate('/trips')}>
+                                    <MapPin size={18} /> My Trips
+                                </Button>
+                                <Button variant="ghost" className="w-full justify-start rounded-xl gap-3 text-muted-foreground hover:text-[#1A6B4A] hover:bg-[#1A6B4A]/5 h-12" onClick={() => navigate('/saved')}>
+                                    <Star size={18} /> Wishlist
+                                </Button>
+                                {profile?.role === 'host' && (
+                                    <Button variant="ghost" className="w-full justify-start rounded-xl gap-3 text-muted-foreground hover:text-[#1A6B4A] hover:bg-[#1A6B4A]/5 h-12" onClick={() => navigate('/host-dashboard')}>
+                                        <Home size={18} /> Host Dashboard
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Settings Content */}
+                    <div className="lg:col-span-8 space-y-8">
+                        <div className="grid gap-6">
+                            {menuItems.map((item, i) => (
+                                <button
+                                    key={i}
+                                    onClick={item.onClick}
+                                    className="flex items-center justify-between p-6 bg-white border border-border rounded-[2rem] hover:shadow-xl hover:shadow-[#1A6B4A]/10 hover:border-emerald-200 transition-all text-left group"
+                                >
+                                    <div className="flex items-center gap-6">
+                                        <div className="h-14 w-14 bg-[#1A6B4A]/5 rounded-2xl flex items-center justify-center text-[#1A6B4A] group-hover:scale-110 transition-transform duration-300">
+                                            <item.icon size={28} strokeWidth={1.5} />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-lg text-[#1A6B4A]">{item.label}</h3>
-                                            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{item.desc}</p>
+                                            <h3 className="font-bold text-xl text-foreground group-hover:text-[#1A6B4A] transition-colors">{item.label}</h3>
+                                            <p className="text-sm text-muted-foreground mt-1">{item.desc}</p>
                                         </div>
-                                    </button>
-                                ))}
-                            </div>
+                                    </div>
+                                    <ChevronRight size={20} className="text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                                </button>
+                            ))}
+                        </div>
 
-                            <div className="mt-12 flex items-center justify-between p-8 bg-[#FFF4F2] rounded-[32px] border border-destructive/10">
-                                <div>
-                                    <h3 className="font-bold text-destructive text-lg">Sign out of your account</h3>
-                                    <p className="text-sm text-destructive/70">Safety first! Securely logout from your session.</p>
-                                </div>
-                                <Button
-                                    variant="outline"
-                                    className="rounded-full px-8 py-6 h-auto font-bold border-destructive/20 text-destructive hover:bg-destructive hover:text-white transition-all"
-                                    onClick={handleLogout}
-                                >
-                                    Log out
-                                </Button>
+                        <div className="flex items-center justify-between p-10 bg-gradient-to-r from-red-50 to-orange-50 rounded-[2rem] border border-red-100 shadow-sm">
+                            <div className="space-y-1">
+                                <h3 className="font-bold text-red-700 text-lg">Sign out</h3>
+                                <p className="text-sm text-red-600/70">Need a break? You can sign out from your account here.</p>
                             </div>
+                            <Button
+                                variant="outline"
+                                className="rounded-2xl px-8 h-12 font-bold border-red-200 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                onClick={handleLogout}
+                            >
+                                <LogOut size={18} className="mr-2" /> Log out
+                            </Button>
                         </div>
                     </div>
                 </div>

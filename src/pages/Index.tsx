@@ -86,7 +86,8 @@ const Index = () => {
         badges: item.amenities || [],
         isSuperhost: item.host?.is_superhost || false,
         instantBook: item.instant_book,
-        description: item.description
+        description: item.description,
+        verification_status: item.verification_status,
       }));
 
       setListings(formattedData);

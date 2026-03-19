@@ -121,6 +121,7 @@ const AllListings = () => {
                 badges: item.amenities || [],
                 isSuperhost: item.host?.is_superhost || false,
                 instantBook: item.instant_book,
+                verification_status: item.verification_status,
             }));
 
             setListings(formatted);

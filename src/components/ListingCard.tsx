@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Star, Heart, Zap, MapPin, Loader2 } from 'lucide-react';
+import { Star, Heart, Zap, MapPin, Loader2, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useAuthDrawer } from '@/context/AuthDrawerContext';
@@ -139,6 +139,15 @@ export const ListingCard = ({ listing, index = 0, onWishlistToggle }: ListingCar
           <div className="absolute left-3 top-3">
             <span className="rounded-pill bg-card/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-foreground shadow-sm backdrop-blur-sm">
               Superhost
+            </span>
+          </div>
+        )}
+
+        {/* Verified Badge */}
+        {(listing as any).verification_status === 'verified' && (
+          <div className="absolute left-3 top-3 translate-y-7">
+            <span className="rounded-pill bg-emerald-600/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm backdrop-blur-sm flex items-center gap-1">
+              <CheckCircle2 size={10} strokeWidth={3} /> Verified
             </span>
           </div>
         )}
