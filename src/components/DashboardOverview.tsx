@@ -95,7 +95,7 @@ export const DashboardOverview = () => {
                 .select(`
                     *,
                     listing:listings(title),
-                    guest:users(full_name, avatar_url)
+                    guest:users!bookings_guest_id_fkey(full_name, avatar_url)
                 `)
                 .eq('host_id', hostId);
 
@@ -287,7 +287,7 @@ export const DashboardOverview = () => {
                     <Card className="rounded-2xl border-none shadow-sm overflow-hidden">
                         <div className="p-6 border-b border-border bg-white/50 flex items-center justify-between">
                             <h3 className="font-semibold text-[#1A6B4A]">Upcoming Check-ins</h3>
-                            <Button variant="link" className="text-[#1A6B4A] font-bold">View all</Button>
+                            <Button variant="link" className="text-[#1A6B4A] font-bold" onClick={() => navigate('/host-dashboard/bookings')}>View all</Button>
                         </div>
                         <CardContent className="p-0">
                             <div className="overflow-x-auto">
@@ -297,7 +297,9 @@ export const DashboardOverview = () => {
                                             <th className="px-6 py-4">Guest</th>
                                             <th className="px-6 py-4">Property</th>
                                             <th className="px-6 py-4">Check-in</th>
+                                            <th className="px-6 py-4">Check-out</th>
                                             <th className="px-6 py-4">Nights</th>
+                                            <th className="px-6 py-4">Guests</th>
                                             <th className="px-6 py-4">Status</th>
                                             <th className="px-6 py-4">Actions</th>
                                         </tr>
@@ -305,34 +307,42 @@ export const DashboardOverview = () => {
                                     <tbody className="divide-y divide-border">
                                         {upcomingBookings.length === 0 ? (
                                             <tr>
-                                                <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground text-sm">
+                                                <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground text-sm">
                                                     No upcoming check-ins found.
                                                 </td>
                                             </tr>
                                         ) : (
-                                            upcomingBookings.map((item, i) => (
-                                                <tr key={i} className="hover:bg-[#FDF6EE]/50 transition-colors">
+                                            upcomingBookings.map((item) => (
+                                                <tr key={item.id} className="hover:bg-[#FDF6EE]/50 transition-colors">
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center gap-3">
                                                             <Avatar className="h-8 w-8">
-                                                                <AvatarFallback className="bg-[#1A6B4A]/10 text-[#1A6B4A] text-[10px]">{item.guest?.full_name[0]}</AvatarFallback>
+                                                                {item.guest?.avatar_url && <AvatarImage src={item.guest.avatar_url} />}
+                                                                <AvatarFallback className="bg-[#1A6B4A]/10 text-[#1A6B4A] text-[10px] font-bold">{item.guest?.full_name?.[0] || '?'}</AvatarFallback>
                                                             </Avatar>
-                                                            <span className="text-sm font-semibold">{item.guest?.full_name}</span>
+                                                            <span className="text-sm font-semibold">{item.guest?.full_name || 'Guest'}</span>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm font-medium">{item.listing?.title}</td>
-                                                    <td className="px-6 py-4 text-sm text-muted-foreground">
+                                                    <td className="px-6 py-4 text-sm font-medium max-w-[160px] truncate">{item.listing?.title || 'N/A'}</td>
+                                                    <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">
                                                         {new Date(item.check_in).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                                     </td>
+                                                    <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                                                        {new Date(item.check_out).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                    </td>
                                                     <td className="px-6 py-4 text-sm font-medium">{item.total_nights}</td>
+                                                    <td className="px-6 py-4 text-sm font-medium">{item.guests_count}</td>
                                                     <td className="px-6 py-4">
                                                         <Badge className={cn("rounded-full border-none px-3 py-1 text-[10px] font-bold text-white",
                                                             item.status === 'confirmed' ? 'bg-emerald-500' : 'bg-amber-400')}>
-                                                            {item.status}
+                                                            {item.status === 'pending_approval' ? 'pending' : item.status}
                                                         </Badge>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <Button variant="ghost" size="sm" className="h-7 text-[10px]">Details</Button>
+                                                        <div className="flex gap-1">
+                                                            <Button variant="ghost" size="sm" className="h-7 text-[10px]" onClick={() => navigate('/host-dashboard/bookings')}>Details</Button>
+                                                            <Button variant="ghost" size="sm" className="h-7 text-[10px] text-[#1A6B4A]" onClick={() => navigate(`/host-dashboard/messages?conv=new&guest=${item.guest_id}&listing=${item.listing_id}&booking=${item.id}`)}>Message</Button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))
