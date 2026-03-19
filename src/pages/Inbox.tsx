@@ -251,11 +251,12 @@ const Inbox = () => {
                 .update(updateData)
                 .eq('id', selectedConv.id);
 
-            // Refresh local state for preview
+            // Refresh local state for preview immediately for snappiness
             setConversations(prev => prev.map(c =>
-                c.id === selectedConv.id ? { ...c, last_message: content, updated_at: new Date().toISOString() } : c
-            ));
-
+                c.id === selectedConv.id
+                    ? { ...c, last_message: content, updated_at: new Date().toISOString(), is_read_host: isHost, is_read_guest: !isHost }
+                    : c
+            ).sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()));
         } catch (error) {
             toast.error('Failed to send message');
         }

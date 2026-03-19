@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, MapPin, Compass, Shield, ArrowRight } from 'lucide-react';
+import { Search, MapPin, Compass, Shield, ArrowRight, Phone, Mail, MessageCircle, User, Star, Home, DollarSign } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { MobileNav } from '@/components/MobileNav';
@@ -193,72 +193,161 @@ const Index = () => {
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="bg-card py-12 md:py-20">
+      <section className="bg-white py-12 md:py-24 overflow-hidden">
         <div className="container">
-          <motion.h2
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center font-display text-2xl font-semibold text-foreground md:text-3xl"
-          >
-            How it works
-          </motion.h2>
-          <div className="relative mt-10 grid gap-8 md:grid-cols-3 md:gap-12">
-            {/* Connecting line - desktop only */}
-            <div className="absolute left-[16.6%] right-[16.6%] top-8 hidden border-t-2 border-dashed border-border md:block" />
+          <div className="text-center mb-16">
+            <motion.h2
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="font-display text-3xl font-bold text-[#1A6B4A] md:text-4xl"
+            >
+              How Pumzika Works
+            </motion.h2>
+            <p className="text-muted-foreground mt-4 text-lg">Your gateway to authentic Tanzanian stays</p>
+          </div>
 
-            {[
-              { icon: Search, title: 'Search your destination', desc: "Browse hundreds of verified stays across Tanzania's top destinations." },
-              { icon: Shield, title: 'Book with confidence', desc: 'Secure payments, verified hosts, and flexible cancellation policies.' },
-              { icon: Compass, title: 'Enjoy your stay', desc: 'Check in seamlessly and experience Tanzanian hospitality at its finest.' },
-            ].map((step, i) => (
-              <motion.div
-                key={step.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.15, duration: 0.4 }}
-                className="relative flex flex-col items-center text-center"
-              >
-                <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
-                  <step.icon size={24} strokeWidth={1.5} className="text-primary" />
-                </div>
-                <h3 className="mt-4 font-body text-base font-semibold text-foreground">{step.title}</h3>
-                <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
-              </motion.div>
-            ))}
+          <div className="grid gap-12 lg:grid-cols-2">
+            {/* For Guests */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-[#FDF6EE] rounded-[40px] p-8 md:p-12 relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                <User size={120} className="text-[#1A6B4A]" />
+              </div>
+              <h3 className="text-2xl font-bold text-[#1A6B4A] mb-8 flex items-center gap-3">
+                <span className="bg-[#1A6B4A] text-white h-8 w-8 rounded-full flex items-center justify-center text-sm">1</span>
+                For Guests
+              </h3>
+              <div className="space-y-8 relative z-10">
+                {[
+                  { icon: Search, title: 'Find your stay', desc: 'Browse curated listings from Arusha to Zanzibar.' },
+                  { icon: Shield, title: 'Secure Booking', desc: 'Pay safely and get instant confirmation.' },
+                  { icon: Compass, title: 'Experience Tanzania', desc: 'Enjoy your stay with 24/7 local support.' }
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-4">
+                    <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                      <item.icon size={20} className="text-[#E8A838]" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#1A6B4A]">{item.title}</p>
+                      <p className="text-sm text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* For Hosts */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-emerald-50 rounded-[40px] p-8 md:p-12 relative overflow-hidden group border border-[#1A6B4A]/5"
+            >
+              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                <Star size={120} className="text-[#1A6B4A]" />
+              </div>
+              <h3 className="text-2xl font-bold text-[#1A6B4A] mb-8 flex items-center gap-3">
+                <span className="bg-[#1A6B4A] text-white h-8 w-8 rounded-full flex items-center justify-center text-sm">2</span>
+                For Hosts
+              </h3>
+              <div className="space-y-8 relative z-10">
+                {[
+                  { icon: Home, title: 'List your space', desc: 'Set your price and share your unique hospitality.' },
+                  { icon: Search, title: 'Manage Bookings', desc: 'Use our dashboard to track stays and earnings.' },
+                  { icon: DollarSign, title: 'Get Paid', desc: 'Reliable payouts directly to your local bank or mobile wallet.' }
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-4">
+                    <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                      <item.icon size={20} className="text-[#1A6B4A]" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#1A6B4A]">{item.title}</p>
+                      <p className="text-sm text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* BECOME A HOST BANNER */}
-      <section className="container py-10 md:py-16">
+      <section className="container py-10 md:py-20">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="relative overflow-hidden rounded-2xl bg-primary px-6 py-10 md:flex md:items-center md:justify-between md:px-12 md:py-14"
+          className="relative overflow-hidden rounded-[48px] bg-[#1A6B4A] px-8 py-16 md:px-20 md:py-20 shadow-2xl"
         >
-          <div className="relative z-10">
-            <h2 className="font-display text-2xl font-semibold text-primary-foreground md:text-3xl">
-              Turn your space into income
-            </h2>
-            <p className="mt-2 max-w-md text-sm text-primary-foreground/80">
-              Join thousands of hosts across Tanzania and start earning from your property today.
-            </p>
+          <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="font-display text-3xl font-bold text-white md:text-5xl leading-tight">
+                Turn your space into income
+              </h2>
+              <p className="mt-6 text-lg text-white/80 max-w-md">
+                Join thousands of hosts across Tanzania and start earning from your property today.
+              </p>
+              <div className="mt-8 flex flex-col gap-4">
+                <Link
+                  to="/become-host"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#E8A838] px-10 py-5 font-bold text-[#1A6B4A] shadow-xl hover:scale-105 transition-all text-lg"
+                >
+                  Get started as Host
+                  <ArrowRight size={20} />
+                </Link>
+              </div>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md rounded-[32px] p-8 border border-white/20">
+              <h3 className="text-xl font-bold text-white mb-6 underline underline-offset-8 decoration-[#E8A838]">Need more information?</h3>
+              <div className="space-y-6">
+                <a href="mailto:info@pumzika.com" className="flex items-center gap-4 text-white hover:text-[#E8A838] transition-colors group">
+                  <div className="h-10 w-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:bg-[#E8A838] group-hover:text-[#1A6B4A] transition-all">
+                    <Mail size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-widest font-bold opacity-60">Email us</p>
+                    <p className="font-bold">info@pumzika.com</p>
+                  </div>
+                </a>
+                <a href="https://wa.me/255759234234" target="_blank" className="flex items-center gap-4 text-white hover:text-[#E8A838] transition-colors group">
+                  <div className="h-10 w-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:bg-[#E8A838] group-hover:text-[#1A6B4A] transition-all">
+                    <MessageCircle size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-widest font-bold opacity-60">WhatsApp</p>
+                    <p className="font-bold">+255 759 234 234</p>
+                  </div>
+                </a>
+              </div>
+            </div>
           </div>
-          <Link
-            to="/become-host"
-            className="relative z-10 mt-6 inline-flex items-center gap-2 rounded-pill bg-accent px-8 py-3 font-body text-sm font-semibold text-accent-foreground shadow-lg transition-transform hover:scale-105 active:scale-95 md:mt-0"
-          >
-            Get started
-            <ArrowRight size={16} strokeWidth={1.5} />
-          </Link>
-          {/* Decorative */}
-          <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-primary-foreground/5" />
-          <div className="absolute -bottom-12 -right-4 h-56 w-56 rounded-full bg-primary-foreground/5" />
+
+          {/* Decorative shapes */}
+          <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-white/5" />
+          <div className="absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-white/5" />
         </motion.div>
       </section>
+
+      {/* Floating WhatsApp UI */}
+      <a
+        href="https://wa.me/255759234234"
+        target="_blank"
+        className="fixed bottom-6 right-6 z-[100] group flex items-center gap-3 md:gap-4"
+      >
+        <div className="bg-white px-4 py-2 rounded-2xl shadow-xl border border-slate-100 hidden group-hover:block animate-in slide-in-from-right-4 fade-in duration-300">
+          <p className="text-xs font-bold text-[#1A6B4A] whitespace-nowrap">Need help? Chat with us</p>
+        </div>
+        <div className="h-14 w-14 md:h-16 md:w-16 bg-[#25D366] rounded-full flex items-center justify-center text-white shadow-2xl hover:scale-110 active:scale-95 transition-all">
+          <MessageCircle size={32} />
+        </div>
+      </a>
 
       <Footer />
       <MobileNav />

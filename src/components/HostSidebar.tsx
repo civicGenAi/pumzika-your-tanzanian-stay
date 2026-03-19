@@ -37,22 +37,32 @@ export const HostSidebar = () => {
     const location = useLocation();
 
     useEffect(() => {
-        fetchUnreadCount();
+        let channel: any;
 
-        // Subscription for real-time updates
-        const channel = supabase
-            .channel('unread_messages')
-            .on('postgres_changes', {
-                event: '*',
-                schema: 'public',
-                table: 'conversations'
-            }, () => {
-                fetchUnreadCount();
-            })
-            .subscribe();
+        const setupSubscription = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            fetchUnreadCount();
+
+            // Subscription for real-time updates (filtered by host_id for efficiency)
+            channel = supabase
+                .channel(`unread_messages_${user.id}`)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'conversations',
+                    filter: `host_id=eq.${user.id}`
+                }, () => {
+                    fetchUnreadCount();
+                })
+                .subscribe();
+        };
+
+        setupSubscription();
 
         return () => {
-            supabase.removeChannel(channel);
+            if (channel) supabase.removeChannel(channel);
         };
     }, []);
 
