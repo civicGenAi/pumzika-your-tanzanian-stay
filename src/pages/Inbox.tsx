@@ -9,6 +9,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 const Inbox = () => {
     const [searchParams] = useSearchParams();
@@ -35,14 +36,35 @@ const Inbox = () => {
             }
             setCurrentUser(user);
             fetchConversations(user.id);
+
+            // Subscribe to real-time conversation updates (for unread markers/last message)
+            const channel = supabase
+                .channel('conversation_updates')
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'conversations',
+                    filter: `host_id=eq.${user.id}`
+                }, () => {
+                    fetchConversations(user.id);
+                })
+                .subscribe();
+
+            return channel;
         };
-        checkUser();
+
+        let activeChannel: any;
+        checkUser().then(channel => { activeChannel = channel; });
 
         // Responsive handling
         const checkMobile = () => setIsMobileView(window.innerWidth < 768);
         checkMobile();
         window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
+
+        return () => {
+            window.removeEventListener('resize', checkMobile);
+            if (activeChannel) supabase.removeChannel(activeChannel);
+        };
     }, []);
 
     useEffect(() => {
@@ -58,13 +80,71 @@ const Inbox = () => {
     }, [messages]);
 
     useEffect(() => {
-        // Handle direct navigation via ?conv=ID
+        // Handle direct navigation via ?conv=ID or ?conv=new
         const convId = searchParams.get('conv');
-        if (convId && conversations.length > 0) {
+        const guestId = searchParams.get('guest');
+        const listingId = searchParams.get('listing');
+        const bookingId = searchParams.get('booking');
+
+        if (convId === 'new' && guestId && currentUser) {
+            handleNewConversation(guestId, listingId, bookingId);
+        } else if (convId && conversations.length > 0) {
             const found = conversations.find(c => c.id === convId);
             if (found) setSelectedConv(found);
+        } else if (conversations.length > 0 && !selectedConv && !isMobileView) {
+            // Select first conversation by default on desktop
+            setSelectedConv(conversations[0]);
         }
-    }, [searchParams, conversations]);
+    }, [searchParams, conversations, currentUser]);
+
+    const handleNewConversation = async (guestId: string, listingId: string | null, bookingId: string | null) => {
+        if (!currentUser) return;
+
+        try {
+            // Check if conversation already exists
+            const { data: existing } = await supabase
+                .from('conversations')
+                .select('*')
+                .eq('guest_id', guestId)
+                .eq('host_id', currentUser.id)
+                .maybeSingle();
+
+            if (existing) {
+                setSelectedConv(existing);
+                return;
+            }
+
+            // Create new conversation
+            const { data: newConv, error } = await supabase
+                .from('conversations')
+                .insert({
+                    guest_id: guestId,
+                    host_id: currentUser.id,
+                    listing_id: listingId,
+                    booking_id: bookingId,
+                    last_message_at: new Date().toISOString()
+                })
+                .select(`
+                    *,
+                    participants:conversation_participants (
+                        user:users (*)
+                    ),
+                    booking:bookings (
+                        listing:listings (title, region)
+                    )
+                `)
+                .single();
+
+            if (error) throw error;
+            if (newConv) {
+                setConversations(prev => [newConv, ...prev]);
+                setSelectedConv(newConv);
+            }
+        } catch (error) {
+            console.error('Error creating conversation:', error);
+            toast.error('Could not start conversation');
+        }
+    };
 
     const fetchConversations = async (userId: string) => {
         try {
@@ -111,12 +191,35 @@ const Inbox = () => {
                 filter: `conversation_id=eq.${convId}`
             }, (payload) => {
                 setMessages(prev => [...prev, payload.new]);
+                // Mark as read if currently viewed
+                if (payload.new.sender_id !== currentUser?.id) {
+                    markAsRead(convId);
+                }
             })
             .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
         };
+    };
+
+    const markAsRead = async (convId: string) => {
+        if (!currentUser) return;
+
+        await supabase
+            .from('messages')
+            .update({ is_read: true })
+            .eq('conversation_id', convId)
+            .neq('sender_id', currentUser.id);
+
+        // Update conversation read status
+        const isHost = conversations.find(c => c.id === convId)?.host_id === currentUser.id;
+        const updateData = isHost ? { is_read_host: true } : { is_read_guest: true };
+
+        await supabase
+            .from('conversations')
+            .update(updateData)
+            .eq('id', convId);
     };
 
     const handleSendMessage = async (e?: React.FormEvent) => {
@@ -201,10 +304,21 @@ const Inbox = () => {
                                                     <p className={`font-bold truncate ${isSelected ? 'text-[#1A6B4A]' : 'text-foreground'}`}>{otherUser.full_name}</p>
                                                     <span className="text-[10px] font-bold text-muted-foreground uppercase">{conv.updated_at && format(new Date(conv.updated_at), 'HH:mm')}</span>
                                                 </div>
-                                                <p className="text-xs font-semibold text-[#E8A838] truncate uppercase tracking-wider mb-1">
-                                                    {conv.booking?.listing?.title || 'Direct Chat'}
-                                                </p>
-                                                <p className="text-sm text-muted-foreground truncate line-clamp-1">{conv.last_message || 'Start a conversation'}</p>
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-xs font-semibold text-[#E8A838] truncate uppercase tracking-wider mb-1">
+                                                            {conv.booking?.listing?.title || 'Direct Chat'}
+                                                        </p>
+                                                        <p className={cn("text-sm truncate line-clamp-1",
+                                                            conv.is_read_host ? "text-muted-foreground" : "text-foreground font-bold"
+                                                        )}>
+                                                            {conv.last_message || 'Start a conversation'}
+                                                        </p>
+                                                    </div>
+                                                    {!conv.is_read_host && (
+                                                        <div className="h-2 w-2 rounded-full bg-[#1A6B4A] shrink-0" />
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     );
@@ -242,11 +356,12 @@ const Inbox = () => {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {selectedConv.booking?.listing && (
-                                            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-[#1A6B4A]/5 rounded-full text-[10px] font-bold text-[#1A6B4A] uppercase tracking-wider">
-                                                <MapPin size={12} /> {selectedConv.booking.listing.region}
-                                            </div>
-                                        )}
+                                        <div className="hidden lg:flex flex-col items-end">
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Property</p>
+                                            <p className="text-xs font-bold text-[#1A6B4A]">
+                                                {selectedConv.booking?.listing?.title || 'General Inquiry'}
+                                            </p>
+                                        </div>
                                         <Button variant="ghost" size="icon" className="rounded-full"><MoreHorizontal size={20} /></Button>
                                     </div>
                                 </div>
@@ -264,8 +379,8 @@ const Inbox = () => {
                                                     className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                                                 >
                                                     <div className={`max-w-[75%] md:max-w-[60%] rounded-[24px] px-5 py-3 shadow-sm ${isMe
-                                                            ? 'bg-[#1A6B4A] text-white rounded-tr-none'
-                                                            : 'bg-white text-foreground border border-border/50 rounded-tl-none'
+                                                        ? 'bg-[#1A6B4A] text-white rounded-tr-none'
+                                                        : 'bg-white text-foreground border border-border/50 rounded-tl-none'
                                                         }`}>
                                                         <p className="text-sm leading-relaxed">{msg.content}</p>
                                                         <p className={`text-[9px] mt-1.5 font-bold uppercase ${isMe ? 'text-white/60' : 'text-muted-foreground'}`}>

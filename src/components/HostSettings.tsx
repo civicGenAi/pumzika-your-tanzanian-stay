@@ -64,37 +64,52 @@ export const HostSettings = () => {
         }
     };
 
-    const sections = [
+    const categories = [
         {
-            icon: User,
-            label: 'Personal Information',
-            desc: 'Manage your host bio, name and phone',
-            onClick: () => setEditOpen(true)
+            title: 'Profile & Verification',
+            items: [
+                {
+                    icon: User,
+                    label: 'Personal Information',
+                    desc: 'Manage your host bio, name and phone',
+                    onClick: () => setEditOpen(true)
+                },
+                {
+                    icon: Shield,
+                    label: 'Legal & Help',
+                    desc: 'Host terms and support resources',
+                    onClick: () => setHelpOpen(true)
+                },
+            ]
         },
         {
-            icon: Shield,
-            label: 'Login & Security',
-            desc: 'Secure your hosting account',
-            onClick: () => setSecurityOpen(true)
+            title: 'Business & Financials',
+            items: [
+                {
+                    icon: CreditCard,
+                    label: 'Payout Methods',
+                    desc: 'Where you receive your earnings',
+                    onClick: () => setPaymentsOpen(true)
+                },
+                {
+                    icon: Bell,
+                    label: 'Notifications',
+                    desc: 'Control host alerts and guest messages',
+                    onClick: () => setNotificationsOpen(true)
+                },
+            ]
         },
         {
-            icon: CreditCard,
-            label: 'Payout Methods',
-            desc: 'Where you receive your earnings',
-            onClick: () => setPaymentsOpen(true)
-        },
-        {
-            icon: Bell,
-            label: 'Notifications',
-            desc: 'Control host alerts and guest messages',
-            onClick: () => setNotificationsOpen(true)
-        },
-        {
-            icon: HelpCircle,
-            label: 'Legal & Help',
-            desc: 'Host terms and support resources',
-            onClick: () => setHelpOpen(true)
-        },
+            title: 'Account Settings',
+            items: [
+                {
+                    icon: Shield,
+                    label: 'Login & Security',
+                    desc: 'Secure your hosting account',
+                    onClick: () => setSecurityOpen(true)
+                },
+            ]
+        }
     ];
 
     if (isLoading) {
@@ -138,22 +153,30 @@ export const HostSettings = () => {
                 </div>
             </div>
 
-            {/* Settings Grid */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {sections.map((item, i) => (
-                    <button
-                        key={i}
-                        onClick={item.onClick}
-                        className="flex flex-col gap-4 p-6 bg-white border border-border/50 rounded-3xl hover:shadow-lg hover:border-[#1A6B4A]/20 transition-all text-left group"
-                    >
-                        <div className="h-12 w-12 bg-[#1A6B4A]/10 rounded-2xl flex items-center justify-center text-[#1A6B4A] group-hover:bg-[#1A6B4A] group-hover:text-white transition-all duration-300">
-                            <item.icon size={24} strokeWidth={1.5} />
+            {/* Settings Categories */}
+            <div className="space-y-12">
+                {categories.map((category, idx) => (
+                    <div key={idx} className="space-y-6">
+                        <h3 className="text-[10px] font-bold uppercase tracking-[2px] text-[#1A6B4A] px-2">{category.title}</h3>
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {category.items.map((item, i) => (
+                                <button
+                                    key={i}
+                                    onClick={item.onClick}
+                                    className="flex flex-col gap-4 p-8 bg-white border border-border/50 rounded-[32px] hover:shadow-xl hover:shadow-[#1A6B4A]/5 hover:border-[#1A6B4A]/20 transition-all text-left group relative overflow-hidden"
+                                >
+                                    <div className="absolute top-0 right-0 h-24 w-24 bg-[#1A6B4A]/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-[#1A6B4A]/10 transition-colors" />
+                                    <div className="h-14 w-14 bg-[#1A6B4A]/10 rounded-2xl flex items-center justify-center text-[#1A6B4A] group-hover:bg-[#1A6B4A] group-hover:text-white transition-all duration-300 relative z-10">
+                                        <item.icon size={28} strokeWidth={1.5} />
+                                    </div>
+                                    <div className="relative z-10">
+                                        <h3 className="font-bold text-lg text-[#1A6B4A]">{item.label}</h3>
+                                        <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{item.desc}</p>
+                                    </div>
+                                </button>
+                            ))}
                         </div>
-                        <div>
-                            <h3 className="font-bold text-lg text-[#1A6B4A]">{item.label}</h3>
-                            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{item.desc}</p>
-                        </div>
-                    </button>
+                    </div>
                 ))}
             </div>
 

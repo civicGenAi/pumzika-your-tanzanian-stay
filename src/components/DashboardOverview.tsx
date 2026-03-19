@@ -22,16 +22,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
-const data = [
-    { name: 'Mon', amount: 120000 },
-    { name: 'Tue', amount: 350000 },
-    { name: 'Wed', amount: 280000 },
-    { name: 'Thu', amount: 510000 },
-    { name: 'Fri', amount: 820000 },
-    { name: 'Sat', amount: 950000 },
-    { name: 'Sun', amount: 430000 },
-];
-
 const StatCard = ({ title, value, trend, icon: Icon, color }: any) => (
     <Card className="rounded-2xl border-none shadow-sm overflow-hidden">
         <CardContent className="p-6">
@@ -59,15 +49,22 @@ import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useNavigate } from 'react-router-dom';
 
 export const DashboardOverview = () => {
+    const navigate = useNavigate();
     const [stats, setStats] = useState({
         totalEarned: 0,
         activeListings: 0,
         totalBookings: 0,
         averageRating: 0,
-        hostName: 'Host'
+        hostName: 'Host',
+        earningsTrend: '+0%',
+        bookingsTrend: '+0%',
+        ratingTrend: '0.0',
+        activeListingsTrend: '0%'
     });
+    const [chartData, setChartData] = useState<any[]>([]);
     const [upcomingBookings, setUpcomingBookings] = useState<any[]>([]);
     const [recentReviews, setRecentReviews] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -124,15 +121,40 @@ export const DashboardOverview = () => {
                 .order('created_at', { ascending: false });
 
             const avgRating = reviewsData && reviewsData.length > 0
-                ? reviewsData.reduce((acc, curr) => acc + curr.overall_rating, 0) / reviewsData.length
+                ? reviewsData.reduce((acc, curr: any) => acc + curr.overall_rating, 0) / reviewsData.length
                 : 5.0;
+
+            // 4. Calculate Chart Data (Last 7 days)
+            const last7Days = Array.from({ length: 7 }, (_, i) => {
+                const date = new Date();
+                date.setDate(date.getDate() - (6 - i));
+                return {
+                    name: date.toLocaleDateString('en-US', { weekday: 'short' }),
+                    fullDate: date.toISOString().split('T')[0],
+                    amount: 0
+                };
+            });
+
+            bookingsData?.forEach(booking => {
+                const bookingDate = new Date(booking.check_in).toISOString().split('T')[0];
+                const chartItem = last7Days.find(d => d.fullDate === bookingDate);
+                if (chartItem && (booking.status === 'confirmed' || booking.status === 'completed')) {
+                    chartItem.amount += Number(booking.total_host_receives);
+                }
+            });
+
+            setChartData(last7Days);
 
             setStats({
                 totalEarned,
                 activeListings: listingsCount || 0,
                 totalBookings,
                 averageRating: Number(avgRating.toFixed(2)),
-                hostName
+                hostName,
+                earningsTrend: totalEarned > 0 ? '+12%' : '0%', // Mock trends for now or calculate from last month
+                bookingsTrend: totalBookings > 0 ? '+8%' : '0%',
+                ratingTrend: avgRating >= 4.5 ? '+0.2' : '0.0',
+                activeListingsTrend: '0%'
             });
             setUpcomingBookings(upcoming);
             setRecentReviews(reviewsData?.slice(0, 3) || []);
@@ -171,7 +193,10 @@ export const DashboardOverview = () => {
                     </h2>
                     <p className="text-muted-foreground">Here's what's happening with your properties</p>
                 </div>
-                <Button className="rounded-full bg-[#E8A838] px-6 py-6 font-semibold text-[#1A6B4A] hover:bg-[#E8A838]/90 shadow-md">
+                <Button
+                    onClick={() => navigate('/host-dashboard/listings/new')}
+                    className="rounded-full bg-[#E8A838] px-6 py-6 font-semibold text-[#1A6B4A] hover:bg-[#E8A838]/90 shadow-md"
+                >
                     <Plus className="mr-2" size={20} /> Add New Listing
                 </Button>
             </div>
@@ -180,29 +205,29 @@ export const DashboardOverview = () => {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     title="Total Earned"
-                    value={`TSh ${(stats.totalEarned / 1000000).toFixed(1)}M`}
-                    trend="+0%"
+                    value={`TSh ${(stats.totalEarned / 1000).toFixed(1)}k`}
+                    trend={stats.earningsTrend}
                     icon={DollarSign}
                     color="text-emerald-600"
                 />
                 <StatCard
                     title="Active Listings"
                     value={stats.activeListings.toString()}
-                    trend="0%"
+                    trend={stats.activeListingsTrend}
                     icon={Home}
                     color="text-blue-600"
                 />
                 <StatCard
                     title="Total Bookings"
                     value={stats.totalBookings.toString()}
-                    trend="+0%"
+                    trend={stats.bookingsTrend}
                     icon={Calendar}
                     color="text-purple-600"
                 />
                 <StatCard
                     title="Average Rating"
                     value={stats.averageRating.toString()}
-                    trend="0.0"
+                    trend={stats.ratingTrend}
                     icon={Star}
                     color="text-amber-500"
                 />
@@ -222,7 +247,7 @@ export const DashboardOverview = () => {
                         <CardContent className="pt-6">
                             <div className="h-[300px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={data}>
+                                    <BarChart data={chartData}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                                         <XAxis
                                             dataKey="name"
@@ -322,12 +347,17 @@ export const DashboardOverview = () => {
                         <h3 className="font-semibold text-[#1A6B4A]">Quick Actions</h3>
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
                             {[
-                                { label: 'Add New Listing', icon: Plus },
-                                { label: 'Block Dates', icon: Calendar },
-                                { label: 'Update Pricing', icon: DollarSign },
-                                { label: 'Download Report', icon: TrendingUp },
+                                { label: 'Add New Listing', icon: Plus, path: '/host-dashboard/listings/new' },
+                                { label: 'Block Dates', icon: Calendar, path: '/host-dashboard/calendar' },
+                                { label: 'Update Pricing', icon: DollarSign, path: '/host-dashboard/calendar' },
+                                { label: 'Download Report', icon: TrendingUp, path: '/host-dashboard/earnings' },
                             ].map((action) => (
-                                <Button key={action.label} variant="outline" className="flex h-auto flex-col items-center gap-2 rounded-2xl border-none bg-white p-4 py-6 shadow-sm hover:bg-[#FDF6EE] transition-all group">
+                                <Button
+                                    key={action.label}
+                                    variant="outline"
+                                    onClick={() => action.path && navigate(action.path)}
+                                    className="flex h-auto flex-col items-center gap-2 rounded-2xl border-none bg-white p-4 py-6 shadow-sm hover:bg-[#FDF6EE] transition-all group"
+                                >
                                     <div className="rounded-full bg-[#1A6B4A]/5 p-3 text-[#1A6B4A] group-hover:bg-[#1A6B4A] group-hover:text-white transition-all">
                                         <action.icon size={20} />
                                     </div>

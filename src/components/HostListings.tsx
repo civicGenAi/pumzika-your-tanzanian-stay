@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Eye, Home } from 'lucide-react';
+import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Eye, Home, LayoutGrid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,11 @@ import { cn } from '@/lib/utils';
 export const HostListings = () => {
     const navigate = useNavigate();
     const [listings, setListings] = useState<any[]>([]);
+    const [filteredListings, setFilteredListings] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState<string>('all');
 
     useEffect(() => {
         fetchListings();
@@ -33,12 +37,23 @@ export const HostListings = () => {
 
             if (error) throw error;
             setListings(data || []);
+            setFilteredListings(data || []);
         } catch (error) {
             console.error('Error fetching listings:', error);
         } finally {
             setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+        const filtered = listings.filter(l => {
+            const matchesSearch = l.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                l.destination.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesStatus = statusFilter === 'all' || l.status === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+        setFilteredListings(filtered);
+    }, [searchQuery, statusFilter, listings]);
 
     const deleteListing = async (id: string, title: string) => {
         if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
@@ -72,11 +87,43 @@ export const HostListings = () => {
             <div className="flex flex-col gap-4 md:flex-row md:items-center">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                    <Input placeholder="Search listings..." className="pl-10 rounded-xl border-none shadow-sm focus-visible:ring-primary" />
+                    <Input
+                        placeholder="Search listings..."
+                        className="pl-10 rounded-xl border-none shadow-sm focus-visible:ring-primary"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                 </div>
-                <Button variant="outline" className="rounded-xl border-none shadow-sm gap-2">
-                    <Filter size={18} /> Filters
-                </Button>
+                <div className="flex gap-2">
+                    <div className="flex bg-white rounded-xl p-1 shadow-sm border border-border/50">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setViewMode('grid')}
+                            className={cn("rounded-lg px-3 h-8", viewMode === 'grid' && "bg-[#1A6B4A]/10 text-[#1A6B4A]")}
+                        >
+                            <LayoutGrid size={16} />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setViewMode('list')}
+                            className={cn("rounded-lg px-3 h-8", viewMode === 'list' && "bg-[#1A6B4A]/10 text-[#1A6B4A]")}
+                        >
+                            <List size={16} />
+                        </Button>
+                    </div>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="rounded-xl border-none shadow-sm bg-white px-4 text-sm focus:ring-1 focus:ring-primary outline-none h-10"
+                    >
+                        <option value="all">All Status</option>
+                        <option value="published">Published</option>
+                        <option value="draft">Draft</option>
+                        <option value="paused">Paused</option>
+                    </select>
+                </div>
             </div>
 
             {isLoading ? (
@@ -85,61 +132,120 @@ export const HostListings = () => {
                         <Skeleton key={i} className="h-64 rounded-2xl" />
                     ))}
                 </div>
-            ) : listings.length > 0 ? (
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {listings.map((listing) => (
-                        <Card key={listing.id} className="group overflow-hidden rounded-2xl border-none shadow-sm transition-all hover:shadow-md">
-                            <div className="relative aspect-video overflow-hidden">
-                                <img
-                                    src={listing.listing_images?.sort((a: any, b: any) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))[0]?.url || 'https://images.unsplash.com/photo-1512918766675-ed406e3c7432?w=800&fit=crop'}
-                                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                    alt={listing.title}
-                                />
-                                <div className="absolute right-3 top-3">
-                                    <Badge className={cn("rounded-full border-none px-3 py-1 text-[10px] font-bold text-white",
-                                        listing.status === 'published' ? 'bg-emerald-500' : 'bg-amber-400')}>
-                                        {listing.status}
-                                    </Badge>
-                                </div>
-                            </div>
-                            <CardContent className="p-5">
-                                <div className="flex items-start justify-between gap-2">
-                                    <div>
-                                        <h3 className="font-bold text-[#1A6B4A] line-clamp-1">{listing.title}</h3>
-                                        <p className="text-xs text-muted-foreground mt-1">{listing.region}, {listing.destination}</p>
+            ) : filteredListings.length > 0 ? (
+                viewMode === 'grid' ? (
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {filteredListings.map((listing) => (
+                            <Card key={listing.id} className="group overflow-hidden rounded-2xl border-none shadow-sm transition-all hover:shadow-md">
+                                <div className="relative aspect-video overflow-hidden">
+                                    <img
+                                        src={listing.listing_images?.sort((a: any, b: any) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))[0]?.url || 'https://images.unsplash.com/photo-1512918766675-ed406e3c7432?w=800&fit=crop'}
+                                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                        alt={listing.title}
+                                    />
+                                    <div className="absolute right-3 top-3">
+                                        <Badge className={cn("rounded-full border-none px-3 py-1 text-[10px] font-bold text-white shadow-sm",
+                                            listing.status === 'published' ? 'bg-emerald-500' : 'bg-amber-400')}>
+                                            {listing.status}
+                                        </Badge>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                                        <MoreVertical size={16} />
-                                    </Button>
                                 </div>
-                                <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-                                    <div className="flex flex-col">
-                                        <span className="text-xs text-muted-foreground">Price/night</span>
-                                        <span className="text-sm font-bold">TSh {Number(listing.base_price).toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="h-8 w-8 rounded-full p-0"
-                                            onClick={() => navigate(`/host-dashboard/listings/${listing.id}/edit`)}
-                                        >
-                                            <Edit size={14} />
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="h-8 w-8 rounded-full p-0 text-destructive hover:text-destructive"
-                                            onClick={() => deleteListing(listing.id, listing.title)}
-                                        >
-                                            <Trash2 size={14} />
+                                <CardContent className="p-5">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div>
+                                            <h3 className="font-bold text-[#1A6B4A] line-clamp-1">{listing.title}</h3>
+                                            <p className="text-xs text-muted-foreground mt-1">{listing.region}, {listing.destination}</p>
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                                            <MoreVertical size={16} />
                                         </Button>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+                                    <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Price/night</span>
+                                            <span className="text-sm font-bold text-[#1A6B4A]">TSh {Number(listing.base_price).toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="h-9 w-9 rounded-xl p-0 border border-[#1A6B4A]/10 bg-slate-50 hover:bg-[#1A6B4A]/5 hover:text-[#1A6B4A] transition-colors"
+                                                onClick={() => navigate(`/host-dashboard/listings/${listing.id}/edit`)}
+                                            >
+                                                <Edit size={16} />
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="h-9 w-9 rounded-xl p-0 border border-rose-100 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 transition-colors"
+                                                onClick={() => deleteListing(listing.id, listing.title)}
+                                            >
+                                                <Trash2 size={16} />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {filteredListings.map((listing) => (
+                            <Card key={listing.id} className="group overflow-hidden rounded-2xl border-none shadow-sm transition-all hover:shadow-md">
+                                <CardContent className="p-0">
+                                    <div className="flex items-center gap-6">
+                                        <div className="h-24 w-40 shrink-0 overflow-hidden">
+                                            <img
+                                                src={listing.listing_images?.sort((a: any, b: any) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))[0]?.url || 'https://images.unsplash.com/photo-1512918766675-ed406e3c7432?w=800&fit=crop'}
+                                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                alt={listing.title}
+                                            />
+                                        </div>
+                                        <div className="flex-1 py-4">
+                                            <div className="flex items-center justify-between pr-6">
+                                                <div>
+                                                    <h3 className="font-bold text-[#1A6B4A]">{listing.title}</h3>
+                                                    <p className="text-xs text-muted-foreground mt-0.5">{listing.region}, {listing.destination}</p>
+                                                </div>
+                                                <div className="flex items-center gap-8">
+                                                    <div className="flex flex-col items-end">
+                                                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Status</span>
+                                                        <Badge className={cn("rounded-full border-none px-2.5 py-0.5 text-[10px] font-bold text-white shadow-none mt-1",
+                                                            listing.status === 'published' ? 'bg-emerald-500' : 'bg-amber-400')}>
+                                                            {listing.status}
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="flex flex-col items-end w-32">
+                                                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Base Price</span>
+                                                        <span className="text-sm font-bold text-[#1A6B4A] mt-1">TSh {Number(listing.base_price).toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="h-9 w-9 rounded-xl p-0 border border-[#1A6B4A]/10 bg-slate-50 hover:bg-[#1A6B4A]/5 hover:text-[#1A6B4A] transition-colors"
+                                                            onClick={() => navigate(`/host-dashboard/listings/${listing.id}/edit`)}
+                                                        >
+                                                            <Edit size={16} />
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="h-9 w-9 rounded-xl p-0 border border-rose-100 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 transition-colors"
+                                                            onClick={() => deleteListing(listing.id, listing.title)}
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )
             ) : (
                 <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-sm text-center px-6">
                     <div className="h-32 w-32 bg-[#FDF6EE] rounded-full flex items-center justify-center mb-6">
