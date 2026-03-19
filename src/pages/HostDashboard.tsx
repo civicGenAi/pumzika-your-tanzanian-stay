@@ -12,6 +12,7 @@ import { HostSettings } from '@/components/HostSettings';
 import { ListingWizard } from '@/components/ListingWizard';
 import { StateFeedback } from '@/components/StateFeedback';
 import { Inbox } from './Inbox';
+import { MobileNav } from '@/components/MobileNav';
 
 const HostDashboard = () => {
     const [isLoading, setIsLoading] = useState(true);
@@ -50,6 +51,7 @@ const HostDashboard = () => {
                     )}
                 </div>
             </main>
+            <MobileNav />
         </div>
     );
 };

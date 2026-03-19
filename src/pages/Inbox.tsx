@@ -137,9 +137,9 @@ export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
                 })
                 .select(`
                     *,
-                    participants:conversation_participants (
-                        user:users (*)
-                    ),
+                    guest:users!guest_id (full_name, avatar_url),
+                    host:users!host_id (full_name, avatar_url),
+                    listing:listings (title, region),
                     booking:bookings (
                         listing:listings (title, region)
                     )
@@ -163,14 +163,14 @@ export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
                 .from('conversations')
                 .select(`
                     *,
-                    participants:conversation_participants (
-                        user:users (*)
-                    ),
+                    guest:users!guest_id (full_name, avatar_url),
+                    host:users!host_id (full_name, avatar_url),
+                    listing:listings (title, region),
                     booking:bookings (
                         listing:listings (title, region)
                     )
                 `)
-                .order('updated_at', { ascending: false });
+                .order('last_message_at', { ascending: false });
 
             if (error) throw error;
             setConversations(data || []);
@@ -254,8 +254,8 @@ export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
             // Update conversation preview and unread status for recipient
             const isHost = selectedConv.host_id === currentUser.id;
             const updateData = isHost
-                ? { last_message: content, updated_at: new Date().toISOString(), is_read_guest: false }
-                : { last_message: content, updated_at: new Date().toISOString(), is_read_host: false };
+                ? { last_message: content, last_message_at: new Date().toISOString(), is_read_guest: false }
+                : { last_message: content, last_message_at: new Date().toISOString(), is_read_host: false };
 
             await supabase
                 .from('conversations')
@@ -265,16 +265,17 @@ export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
             // Refresh local state for preview immediately for snappiness
             setConversations(prev => prev.map(c =>
                 c.id === selectedConv.id
-                    ? { ...c, last_message: content, updated_at: new Date().toISOString(), is_read_host: isHost, is_read_guest: !isHost }
+                    ? { ...c, last_message: content, last_message_at: new Date().toISOString(), is_read_host: isHost, is_read_guest: !isHost }
                     : c
-            ).sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()));
+            ).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()));
         } catch (error) {
             toast.error('Failed to send message');
         }
     };
 
     const getOtherParticipant = (conv: any) => {
-        return conv.participants?.find((p: any) => p.user?.id !== currentUser?.id)?.user;
+        if (!conv || !currentUser) return null;
+        return conv.guest_id === currentUser.id ? conv.host : conv.guest;
     };
 
     return (
@@ -302,7 +303,6 @@ export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
                             ) : conversations.length > 0 ? (
                                 conversations.map((conv) => {
                                     const otherUser = getOtherParticipant(conv);
-                                    if (!otherUser) return null;
                                     const isSelected = selectedConv?.id === conv.id;
 
                                     return (
@@ -313,28 +313,28 @@ export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
                                         >
                                             <div className="relative shrink-0">
                                                 <img
-                                                    src={otherUser.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=User'}
+                                                    src={otherUser?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=User'}
                                                     className="h-14 w-14 rounded-2xl border-2 border-white shadow-sm object-cover"
                                                 />
                                                 <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 border-2 border-white" />
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <p className={`font-bold truncate ${isSelected ? 'text-[#1A6B4A]' : 'text-foreground'}`}>{otherUser.full_name}</p>
-                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">{conv.updated_at && format(new Date(conv.updated_at), 'HH:mm')}</span>
+                                                    <p className={`font-bold truncate ${isSelected ? 'text-[#1A6B4A]' : 'text-foreground'}`}>{otherUser?.full_name || 'User'}</p>
+                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">{conv.last_message_at && format(new Date(conv.last_message_at), 'HH:mm')}</span>
                                                 </div>
                                                 <div className="flex items-center justify-between gap-2">
                                                     <div className="min-w-0 flex-1">
                                                         <p className="text-xs font-semibold text-[#E8A838] truncate uppercase tracking-wider mb-1">
-                                                            {conv.booking?.listing?.title || 'Direct Chat'}
+                                                            {conv.listing?.title || conv.booking?.listing?.title || 'Direct Chat'}
                                                         </p>
                                                         <p className={cn("text-sm truncate line-clamp-1",
-                                                            conv.is_read_host ? "text-muted-foreground" : "text-foreground font-bold"
+                                                            (conv.host_id === currentUser?.id ? conv.is_read_host : conv.is_read_guest) ? "text-muted-foreground" : "text-foreground font-bold"
                                                         )}>
                                                             {conv.last_message || 'Start a conversation'}
                                                         </p>
                                                     </div>
-                                                    {!conv.is_read_host && (
+                                                    {!(conv.host_id === currentUser?.id ? conv.is_read_host : conv.is_read_guest) && (
                                                         <div className="h-2 w-2 rounded-full bg-[#1A6B4A] shrink-0" />
                                                     )}
                                                 </div>
@@ -378,7 +378,7 @@ export const Inbox = ({ isDashboard = false }: { isDashboard?: boolean }) => {
                                         <div className="hidden lg:flex flex-col items-end">
                                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Property</p>
                                             <p className="text-xs font-bold text-[#1A6B4A]">
-                                                {selectedConv.booking?.listing?.title || 'General Inquiry'}
+                                                {selectedConv.listing?.title || selectedConv.booking?.listing?.title || 'General Inquiry'}
                                             </p>
                                         </div>
                                         <Button variant="ghost" size="icon" className="rounded-full"><MoreHorizontal size={20} /></Button>

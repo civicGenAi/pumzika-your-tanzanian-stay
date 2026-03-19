@@ -76,7 +76,7 @@ const Trips = () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            const conversationId = await getOrCreateConversation([user.id, hostId], bookingId);
+            const conversationId = await getOrCreateConversation(user.id, hostId, undefined, bookingId);
             navigate(`/inbox?conv=${conversationId}`);
         } catch (error) {
             toast.error('Could not start conversation');
