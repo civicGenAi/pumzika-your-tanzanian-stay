@@ -25,7 +25,9 @@ import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 import { AuthGuard } from "./components/AuthGuard";
 import { AuthDrawerProvider } from "./context/AuthDrawerContext";
+import { NotificationProvider } from "./context/NotificationContext";
 import { AuthDrawer } from "./components/AuthDrawer";
+import { NotificationPanel } from "./components/NotificationPanel";
 import AdminLayout from "./pages/AdminLayout";
 
 const queryClient = new QueryClient();
@@ -34,35 +36,38 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthDrawerProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/explore" element={<AllListings />} />
-            <Route path="/search" element={<SearchResults />} />
-            <Route path="/listing/:id" element={<ListingDetail />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/become-host" element={<AuthGuard><BecomeHost /></AuthGuard>} />
-            <Route path="/host-dashboard/*" element={<AuthGuard><HostDashboard /></AuthGuard>} />
-            <Route path="/saved" element={<AuthGuard><Saved /></AuthGuard>} />
-            <Route path="/trips" element={<AuthGuard><Trips /></AuthGuard>} />
-            <Route path="/inbox" element={<AuthGuard><Inbox /></AuthGuard>} />
-            <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
-            <Route path="/checkout" element={<AuthGuard><Checkout /></AuthGuard>} />
-            <Route path="/booking-confirmation" element={<AuthGuard><BookingSuccess /></AuthGuard>} />
-            <Route path="/help" element={<HelpCenter />} />
-            <Route path="/safety" element={<SafetyInfo />} />
-            <Route path="/cancellation" element={<CancellationPolicy />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfService />} />
-            <Route path="/admin/*" element={<AdminLayout />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <AuthDrawer />
-        </BrowserRouter>
+        <NotificationProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/explore" element={<AllListings />} />
+              <Route path="/search" element={<SearchResults />} />
+              <Route path="/listing/:id" element={<ListingDetail />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/become-host" element={<AuthGuard><BecomeHost /></AuthGuard>} />
+              <Route path="/host-dashboard/*" element={<AuthGuard><HostDashboard /></AuthGuard>} />
+              <Route path="/saved" element={<AuthGuard><Saved /></AuthGuard>} />
+              <Route path="/trips" element={<AuthGuard><Trips /></AuthGuard>} />
+              <Route path="/inbox" element={<AuthGuard><Inbox /></AuthGuard>} />
+              <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
+              <Route path="/checkout" element={<AuthGuard><Checkout /></AuthGuard>} />
+              <Route path="/booking-confirmation" element={<AuthGuard><BookingSuccess /></AuthGuard>} />
+              <Route path="/help" element={<HelpCenter />} />
+              <Route path="/safety" element={<SafetyInfo />} />
+              <Route path="/cancellation" element={<CancellationPolicy />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/admin/*" element={<AdminLayout />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <AuthDrawer />
+            <NotificationPanel />
+          </BrowserRouter>
+        </NotificationProvider>
       </AuthDrawerProvider>
     </TooltipProvider>
   </QueryClientProvider>

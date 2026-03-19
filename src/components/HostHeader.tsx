@@ -14,11 +14,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
+import { useNotifications } from '@/context/NotificationContext';
 
 export const HostHeader = () => {
     const [user, setUser] = useState<any>(null);
     const [profile, setProfile] = useState<any>(null);
     const navigate = useNavigate();
+    const { unreadCount, setIsOpen: setNotifOpen } = useNotifications();
 
     useEffect(() => {
         const getSession = async () => {
@@ -64,9 +66,18 @@ export const HostHeader = () => {
 
             <div className="flex items-center gap-3 md:gap-4">
                 {/* Notification Bell */}
-                <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full text-muted-foreground hover:bg-secondary">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setNotifOpen(true)}
+                    className="relative h-9 w-9 rounded-full text-muted-foreground hover:bg-secondary"
+                >
                     <Bell size={18} strokeWidth={2} />
-                    <span className="absolute right-2 top-2 flex h-2 w-2 rounded-full bg-[#E8A838] ring-2 ring-white" />
+                    {unreadCount > 0 && (
+                        <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#E8A838] text-[8px] font-bold text-[#1A6B4A] ring-2 ring-white">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                    )}
                 </Button>
 
                 {/* Profile Dropdown */}

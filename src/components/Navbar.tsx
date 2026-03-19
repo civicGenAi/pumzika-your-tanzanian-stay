@@ -2,14 +2,16 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BaobabLogo } from './BaobabLogo';
 import { SearchPill } from './SearchPill';
-import { Menu, Globe, User, LogOut, LayoutDashboard, Heart, Plane, MessageSquare } from 'lucide-react';
+import { Menu, Globe, User, LogOut, LayoutDashboard, Heart, Plane, MessageSquare, Bell } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useAuthDrawer } from '@/context/AuthDrawerContext';
+import { useNotifications } from '@/context/NotificationContext';
 
 export const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { openAuth } = useAuthDrawer();
+  const { unreadCount, setIsOpen: setNotifOpen } = useNotifications();
   const [session, setSession] = useState<any>(null);
   const [role, setRole] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -75,6 +77,19 @@ export const Navbar = () => {
           <button className="hidden rounded-full p-2.5 text-foreground transition-colors hover:bg-secondary md:flex">
             <Globe size={20} strokeWidth={1.5} />
           </button>
+          {session && (
+            <button
+              onClick={() => setNotifOpen(true)}
+              className="relative rounded-full p-2.5 text-foreground transition-colors hover:bg-secondary"
+            >
+              <Bell size={20} strokeWidth={1.5} />
+              {unreadCount > 0 && (
+                <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#E8A838] text-[8px] font-bold text-[#1A6B4A] ring-2 ring-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+          )}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="flex items-center gap-3 rounded-full border border-border bg-card pr-2 pl-4 py-2 shadow-sm transition-all hover:shadow-md active:scale-95"
