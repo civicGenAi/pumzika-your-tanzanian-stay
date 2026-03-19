@@ -218,7 +218,7 @@ const AdminListings = () => {
                                             </div>
                                         </TableCell>
                                         <TableCell className="font-bold text-[#1A6B4A]">
-                                            ${listing.price}
+                                            TSh {Number(listing.base_price).toLocaleString()}
                                         </TableCell>
                                         <TableCell className="text-center">
                                             <button

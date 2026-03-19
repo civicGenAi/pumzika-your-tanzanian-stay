@@ -200,7 +200,7 @@ const AllListings = () => {
             <div>
                 <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-4">Amenities</h3>
                 <div className="grid gap-2 max-h-60 overflow-y-auto pr-2 scrollbar-thin">
-                    {filterChips.filter(c => c.label !== 'All' && !['Arusha', 'Zanzibar', 'Kilimanjaro', 'Dodoma'].includes(c.label)).map((chip) => (
+                    {filterChips.filter(c => c.label !== 'All' && !destinations.some(d => d.name === c.label)).map((chip) => (
                         <label key={chip.label} className="flex items-center gap-3 cursor-pointer group">
                             <div className="relative flex items-center justify-center">
                                 <input
@@ -257,7 +257,7 @@ const AllListings = () => {
                                 <button
                                     key={chip.label}
                                     onClick={() => {
-                                        const isDest = ['Arusha', 'Zanzibar', 'Kilimanjaro', 'Dodoma'].includes(chip.label);
+                                        const isDest = destinations.some(d => d.name === chip.label);
                                         if (chip.label === 'All') {
                                             setSelectedAmenities([]);
                                             setSelectedDestinations([]);

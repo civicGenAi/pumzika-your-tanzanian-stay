@@ -32,6 +32,7 @@ import { SmartImageUpload } from '@/components/SmartImageUpload';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { destinations } from '@/data/sampleData';
 
 const STEPS = [
     { title: 'Base Info', icon: Info, description: 'Title and basic description' },
@@ -396,10 +397,9 @@ export const ListingWizard = () => {
                                                 onChange={e => setFormData({ ...formData, region: e.target.value })}
                                                 className="w-full rounded-xl border-none bg-secondary/50 h-12 px-4 text-sm"
                                             >
-                                                <option value="Zanzibar">Zanzibar</option>
-                                                <option value="Arusha">Arusha</option>
-                                                <option value="Dar es Salaam">Dar es Salaam</option>
-                                                <option value="Kilimanjaro">Kilimanjaro</option>
+                                                {destinations.map(dest => (
+                                                    <option key={dest.slug} value={dest.name}>{dest.name}</option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div className="space-y-2">
