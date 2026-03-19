@@ -12,6 +12,8 @@ import { destinations, filterChips } from '@/data/sampleData';
 import { supabase } from '@/lib/supabase';
 import { Skeleton } from '@/components/ui/skeleton';
 
+import { BaobabLogo } from '@/components/BaobabLogo';
+
 const stagger = {
   hidden: {},
   show: { transition: { staggerChildren: 0.08 } },
@@ -304,16 +306,19 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-md rounded-[32px] p-8 border border-white/20">
+            <div className="bg-white/10 backdrop-blur-md rounded-[32px] p-8 border border-white/20 relative overflow-hidden">
+              <div className="absolute -right-4 -bottom-4 opacity-10">
+                <BaobabLogo className="h-32 w-32 fill-white" />
+              </div>
               <h3 className="text-xl font-bold text-white mb-6 underline underline-offset-8 decoration-[#E8A838]">Need more information?</h3>
-              <div className="space-y-6">
-                <a href="mailto:info@pumzika.com" className="flex items-center gap-4 text-white hover:text-[#E8A838] transition-colors group">
+              <div className="space-y-6 relative z-10">
+                <a href="mailto:info@pumzika.co.tz" className="flex items-center gap-4 text-white hover:text-[#E8A838] transition-colors group">
                   <div className="h-10 w-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:bg-[#E8A838] group-hover:text-[#1A6B4A] transition-all">
                     <Mail size={20} />
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-widest font-bold opacity-60">Email us</p>
-                    <p className="font-bold">info@pumzika.com</p>
+                    <p className="text-xs uppercase tracking-widest font-bold opacity-60">Email Support</p>
+                    <p className="font-bold">info@pumzika.co.tz</p>
                   </div>
                 </a>
                 <a href="https://wa.me/255759234234" target="_blank" className="flex items-center gap-4 text-white hover:text-[#E8A838] transition-colors group">
